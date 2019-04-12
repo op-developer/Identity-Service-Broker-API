@@ -1,0 +1,14 @@
+sequenceDiagram
+
+    participant Service Provider
+    participant Identity Service Broker
+    participant Identity Provider
+    Service Provider->Identity Service Broker: GET /api/embedded-ui/{clientId}
+    Identity Service Broker->Service Provider: return embedded-ui data
+    Service Provider->Identity Service Broker: GET oauth/authorize? ...
+    Identity Service Broker->Identity Provider: Identification
+    Identity Service Broker->Service Provider: return auth code
+    Service Provider-->Identity Service Broker: POST oauth/token
+
+
+

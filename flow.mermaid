@@ -1,0 +1,10 @@
+sequenceDiagram
+    participant Service Provider
+    participant Identity Service Broker
+    participant Identity Provider
+    Service Provider->Identity Service Broker: GET /oauth/authorize?...
+     Identity Service Broker->Identity Provider: Identification
+    Identity Service Broker->Service Provider: return auth code
+    Service Provider-->Identity Service Broker: POST /oauth/token
+    Note right of Identity Service Broker: Direct API call to <br/>exchange auth code<br/> into identity token
+
