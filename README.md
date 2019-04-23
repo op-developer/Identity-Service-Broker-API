@@ -1,6 +1,6 @@
 # Service Provider API for OP Identity Service Broker
 
-2019-04-11
+2019-04-18
 
 OP Identification Service Broker allows Service Providers to implement strong electronic identification (Finnish bank credentials, Mobile ID) easily to websites and mobile apps via single API.
 
@@ -13,7 +13,7 @@ Table of contents:
 4. Flow with hosted Identity Service Broker UI
 5. Flow with embedded Identity Service Broker UI
 6. GET /api/embedded-ui/{client_id}
-7. GET /oauth/authorize/
+7. GET/POST /oauth/authorize/
 8. POST /oauth/token
 9. Identity token
 10. GET /oauth/profile
@@ -144,9 +144,9 @@ API errors:
 | --- | --- | --- |
 | 404 Not found / Service provider not found | the given client_id is not valid | error is shown on ISB |
 
-## 7. GET /oauth/authorize/
+## 7. GET/POST /oauth/authorize/
 
-To initiate the identification process the service provider directs the user to OP's OIDC endpoint either by redirect or by direct link. The request parameters are passed to the ISB in a signed JWS token. The token is sent in the query string as `request` parameter. The following parameters are supported in the authorization request:
+To initiate the identification process the service provider directs the user to OP's OIDC endpoint either by redirect or by direct link. The request parameters are passed to the ISB in a signed JWS token. The token is sent in the GET request's query string as `request` parameter or in the POST request in `payload` as a JSON having structure `{request: <JWS_TOKEN>}`. The following parameters are supported in the authorization request as WJS token claims:
 
 - **client_id** is the client identifier that specifies which service provider is asking for identification.
 - **redirect_uri** specifies to which URI on your site (the service provider) you want the user to return to once identification is done. This URI must be registered with OP (except when using the sandbox environment) to prevent other services misusing your credentials.
@@ -165,6 +165,7 @@ The JWS must be signed with the RS256 algorithm with SP's signing key.
 Example identification request:
 
 `GET https://isb-test.op.fi/oauth/authorize?request=eyJhb[...]`
+`POST https://isb-test.op.fi/oauth/authorize with payload set as {request=eyJhb[...]}`
 
 Once the identification process is done or if there is a recoverable error, the user is directed back to the service provider to the URI specified in the request. The following parameters are included in the query string:
 - **state** is passed as is from the request.
