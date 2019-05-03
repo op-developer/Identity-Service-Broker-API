@@ -8,7 +8,7 @@ To identify the user the Service Provider (your website) redirects the user to t
 
 ### Sandbox users
 
-OP Identity Service Provider sandbox uses fixed credentials (API key / Client ID). __See section 13__ for 
+OP Identity Service Provider sandbox uses fixed credentials (API key / Client ID). __See section 13__.
 
 Table of contents:
 1. Definitions
