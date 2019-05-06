@@ -6,6 +6,10 @@ OP Identification Service Broker allows Service Providers to implement strong el
 
 To identify the user the Service Provider (your website) redirects the user to the Identification Service Broker (OP) with an authorization request. The user chooses the Identity Provider (a bank or Mobile ID) and is redirected there where he/she authenticates with his/her own credentials. OP will process the authentication result, and return the user to your website with verified information about the identity of the user.
 
+### Sandbox users
+
+OP Identity Service Provider does not require registration and uses fixed credentials (Client ID & encryption keys). __See section 13__.
+
 Table of contents:
 1. Definitions
 2. Prerequisites
