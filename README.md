@@ -1,6 +1,6 @@
 # Service Provider API for OP Identity Service Broker
 
-2019-04-18
+2019-05-06
 
 OP Identification Service Broker allows Service Providers to implement strong electronic identification (Finnish bank credentials, Mobile ID) easily to websites and mobile apps via single API.
 
@@ -151,7 +151,7 @@ To initiate the identification process the service provider directs the user to 
 - **client_id** is the client identifier that specifies which service provider is asking for identification.
 - **redirect_uri** specifies to which URI on your site (the service provider) you want the user to return to once identification is done. This URI must be registered with OP (except when using the sandbox environment) to prevent other services misusing your credentials.
 - **response_type** value must be `code`.
-- **scope** is a space separated list of scopes, or  basically sets of information requested. This must include `openid` and `personal_identification_code` . For example `openid profile personal_identity_code`. The `profile` includes `name`, `given_name`, `family_name` and `birthdate`. If the Service Provider's purpose for identifying the user is to create new identification methods, i.e. for example to create an user account with username and password, then the Service Provider must report such purpose by adding either `weak` (for weak identifiers, for example password account) or `strong` (for strong electronic identification which is only for members of the Finnish Trust Network) to the scopes. Using weak or strong as a purpose may affect pricing and depends on your contract.
+- **scope** is a space separated list of scopes, or  basically sets of information requested. This must include `openid` and `personal_identity_code` . For example `openid profile personal_identity_code`. The `profile` includes `name`, `given_name`, `family_name` and `birthdate`. If the Service Provider's purpose for identifying the user is to create new identification methods, i.e. for example to create an user account with username and password, then the Service Provider must report such purpose by adding either `weak` (for weak identifiers, for example password account) or `strong` (for strong electronic identification which is only for members of the Finnish Trust Network) to the scopes. Using weak or strong as a purpose may affect pricing and depends on your contract.
 
 The following optional parameters may be used:
 - **ui_locales** selects user interface language (`fi`, `sv` or `en`).
