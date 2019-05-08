@@ -160,7 +160,7 @@ The following optional parameters may be used:
 - **state** is an opaque value you can use to maintain state between request and callback. Use of `state` is recommended.
 - **ftn_idp_id** shall be delivered if the SP has the embedded Identity Service Broker UI. Parameter contains the id of the user chosen idp.
 
-The JWS must be signed with the RS256 algorithm with SP's signing key.
+The JWS token must be signed with the RS256 algorithm with SP's signing key.
 
 Example identification request:
 
@@ -196,7 +196,7 @@ The actual user identity token from the token endpoint can be fetched using the 
 - **code** authorization code, which was returned in succesful /oauth/authorize/ reply. Mandatory.
 - **grant_type** needs to have value `authorization_code`. Mandatory.
 - **client_assertion_type** must be `urn:ietf:params:oauth:client-assertion-type:jwt-bearer`.
-- **client_assertion** is a signed JWS authentication token.
+- **client_assertion** is a signed JWS authentication token. The JWS must be signed with the RS256 algorithm with SP's signing key.
 
 The client_assertion is signed using the SP's signing key and must contain the following claims:
 - **iss** Issuer. This must contain the client_id.
@@ -238,7 +238,7 @@ Parameter explanations:
 
 The identity token is a JWT token that contains identity attributes about the user, for example name, date of birth or personal identity code. The token is signed by OP's RSA key. The signed token is embedded and encrypted into an JWE token using the service provider's public key.
 
-To obtain the user attributes from the identity token you need to first decrypt the JWE token (`id_token`) received from the '/oauth/token' API. Decryption is done using the Service Provider private RSA key. The decrypted JWS token is signed using OP's RSA certificate to prevent tampering. Service Provider needs to verify that the signature is valid using the JWT library of your choice. The payload of the JWS token embedded in the JWE token contains user information.
+To obtain the user attributes from the identity token you need to first decrypt the JWE token (`id_token`) received from the '/oauth/token' API. Decryption is done using the Service Provider private RSA key. The decrypted JWS token is signed using OP's RSA certificate to prevent tampering. Service Provider needs to verify that the signature is valid using the JWT library of your choice and the OP's public RSA key. The payload of the JWS token embedded in the JWE token contains user information.
 
 The information received depends on the scope of identification request and on what attributes are available. Do note that not all sources of information have given name and family name available as separate attributes. The following attributes may be available currently:
 
@@ -311,13 +311,24 @@ Example of returned data:
 
 ## 11. GET /.well-known/openid-configuration
 
-We provide an optional OpenID Discovery metadata endpoint. It may be used to configure OAuth2 client implementations should they require it. For example: `GET https://isb-test.op.fi/.well-known/openid-configuration`.
+We provide an optional OpenID Discovery metadata endpoint. It may be used to configure OAuth2 client implementations should they require it. The endpoint for production use is `https://isb.op.fi/.well-known/openid-configuration`. For testing please use the sandbox endpoint `https://isb-test.op.fi/.well-known/openid-configuration`.
 
 ## 12. JWKS
 
-The JWKS endpoints are used to exchange public keys between parties. Both SP and ISB have a JWKS endpoint to publish their own public keys. The SP's JWKS endpoint URL has to be registered with OP. The ISB's JWKS endpoint is publicly available.
+The JWKS endpoints are used to exchange public keys between parties. Both SP and ISB have a JWKS endpoint to publish their own public keys. The SP's JWKS endpoint URL has to be registered with OP in the production environment.
 
-For example: `GET https://isb-test.op.fi/jwks/broker`.
+In the Sandbox there is no need to implement JWKS endpoint in the SP end as the ISB uses provided keys, but it is a good idea to implement functionality in the SP end to fetch the ISB signing key from the ISB's JWKS endpoint instead of using the provided keys because this is mandatory in the production.
+
+SP needs to publish two public keys in it's JWKS endpoint:
+- key for verifying both the signed /oauth/authorize request JWS token and the signed JWS token in client_assertion field in the /oauth/token request.
+- key for identity token encrypting
+
+ISB needs to publish one public key in it's JWKS endpoint:
+- key for verifying the signed identity token 
+
+The ISB's JWKS endpoint is publicly available.
+
+For example in Sandbox: `GET https://isb-test.op.fi/jwks/broker`.
 
 Example response:
 
@@ -335,19 +346,42 @@ Example response:
 }
 ```
 
+as an example with the provided keys the SP's JWKS endpoint's response looks like this:
+```json
+{
+  "keys":[
+    {
+      "kty":"RSA",
+      "kid":"dllgRcT7LhEkqbnod6QGBHl8veqgZenwdB3RV2OJkY",
+      "use":"sig",
+      "n":"ymeGHGpfRUdQe0VmPei3ARFBjlpVrK06RpUF3PJATGkNwBoX4j6LIJuacTnmLOiTlj84qy8ggLmoKZqai6JVsGQV-ThlCcRoujHCkNq8eebLBu0craNd62m-fXDfqrZ5TG7fTg6Da4Miv1rC2_hF5Cs3IukAJwHnbNSOY0Lq93jgV4fAt5BbpTttWKU_wBL-Pkei3Yd1pPoS9MmzLk_J8ZdoX72H_NzrXgO1AfoIFptdFMrV13jMZu5Y0NbggqPle1EQa_ErdLhqIOMfpllslxLPkZ_xq3-3ptogIFVOpnJ7CSLur-F-xUdl94-0kPu3jkGZFICRb9bkg1A1BHKiQw",
+      "e":"AQAB"
+    },    
+    {
+      "kty":"RSA",
+      "kid":"MfYGuONWQZabwwph02zJEqOQIPOV1PhEscgHch0QqD0",
+      "use":"enc",
+      "n":"xRXWHYRvsFJ6WGSiLSDZ5KgRHglSpTFbZsrZ_P6Sa9ZKeStOhcP0M4FO9ORdc12MsTPlFMIQy-6TiJXvZ8pxwcweFzaeGVBWtI_72waAHu5SSFnDpJ9SVRYCdCU95ONZAzNMaNNHTPivg5KgYL40yXZqGSCIApAEp7RcE6hm6PYdXLeWf_ATKNfVh9WMpMg49B5HWI7JPVjN8xVi73wjMKgKcReuX8T17HuF7wS0LZwWr80R8sXCevMKdUhah6YcF654eDsqYCEVrVAVOpdSMsmwkuoN0mnDmu8ltyCi-_46ibfmgDWFv_FIx-qAx92ADtBFYyhAiWEia4a67J7h6Q",
+      "e":"AQAB"
+    }
+  ]
+}
+```
+
 ## 13. Public Sandbox for customer testing
 
 The public Sandbox differs from the production in three major ways.
 
 - The Sandbox environment provides test data instead of real personal information.
 - To use the Sandbox environment you need to use the separate API endpoints described above.
-- Common shared credentials and client id are used for the Sandbox environment. Because the sandbox does not require registration all developers need to use the provided SP keys (instead of their own keys).
+- Common shared credentials and client id are used for the Sandbox environment. Because the sandbox does not require registration all developers need to use the provided keys (instead of their own keys).
+- SP do not need to implement JWKS-endpoint as the ISB uses provided keys.
 
 These id's and keys are used for the Sandbox environment:
 
 - **Client identifier**: saippuakauppias
-- **Token decryption key**: See `sandbox-sp-key.pem`
-- **Signature verification key**: See `sandbox-isb-public-key.pem`
+- **Token encryption / decryption key**: See `sandbox-sp-encryption-key.pem`
+- **Signing key**: See `sandbox-sp-signing-key.pem`
 
 ## 14. Service Provider code example
 
