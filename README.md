@@ -1,6 +1,6 @@
 # Service Provider API for OP Identity Service Broker
 
-2019-05-08
+2019-05-15
 
 OP Identification Service Broker allows Service Providers to implement strong electronic identification (Finnish bank credentials, Mobile ID) easily to websites and mobile apps via single API.
 
@@ -17,7 +17,7 @@ Table of contents:
 4. Flow with hosted Identity Service Broker UI
 5. Flow with embedded Identity Service Broker UI
 6. GET /api/embedded-ui/{client_id}
-7. GET/POST /oauth/authorize/
+7. GET/POST /oauth/authorize
 8. POST /oauth/token
 9. Identity token
 10. GET /oauth/profile
@@ -52,15 +52,15 @@ To identify users using the Identity Service Broker and the OIDC API for Service
 
 * OP OIDC authorization endpoint
 
-  The OP OIDC authorization endpoint for production use is `https://isb.op.fi/authorize`. For testing please use the sandbox endpoint `https://isb-test.op.fi/authorize`.
+  The OP OIDC authorization endpoint for production use is `https://isb.op.fi/oauth/authorize`. For testing please use the sandbox endpoint `https://isb-test.op.fi/oauth/authorize`.
 
 * OP OIDC token endpoint
 
-  The OP OIDC token endpoint for production use is `https://isb.op.fi/token`. For testing please use the sandbox endpoint `https://isb-test.op.fi/token`.
+  The OP OIDC token endpoint for production use is `https://isb.op.fi/oauth/token`. For testing please use the sandbox endpoint `https://isb-test.op.fi/oauth/token`.
 
 * OP OIDC profile endpoint
 
-  The OP OIDC profile endpoint for production use is `https://isb.op.fi/profile`. For testing please use the sandbox endpoint `https://isb-test.op.fi/profile`. This endpoint provides exactly the same information as the token endpoint and as such is redundant.
+  The OP OIDC profile endpoint for production use is `https://isb.op.fi/oauth/profile`. For testing please use the sandbox endpoint `https://isb-test.op.fi/oauth/profile`. This endpoint provides exactly the same information as the token endpoint and as such is redundant.
 
 * RSA keypair to sign requests
 
@@ -148,7 +148,7 @@ API errors:
 | --- | --- | --- |
 | 404 Not found / Service provider not found | the given client_id is not valid | error is shown on ISB |
 
-## 7. GET/POST /oauth/authorize/
+## 7. GET/POST /oauth/authorize
 
 To initiate the identification process the service provider directs the user to OP's OIDC endpoint either by redirect or by direct link. The request parameters are passed to the ISB in a signed JWS token. The token is sent in the GET request's query string as `request` parameter or in the POST request in `payload` as a JSON having structure `{request: <JWS_TOKEN>}`. The following parameters are supported in the authorization request as WJS token claims:
 
