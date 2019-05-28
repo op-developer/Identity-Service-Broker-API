@@ -447,6 +447,6 @@ For customer support please contact
 
 Please contact your own branch on contract matters.
 
-## 21. Watching chages
+## 21. Watching changes
 
 The API might change in the future. Please enable watch-functionality as [instructed here](https://help.github.com/en/articles/watching-and-unwatching-repositories) to get notified when the API changes.
