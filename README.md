@@ -1,6 +1,6 @@
 # Service Provider API for OP Identity Service Broker
 
-2019-05-15
+2019-05-27
 
 OP Identification Service Broker allows Service Providers to implement strong electronic identification (Finnish bank credentials, Mobile ID) easily to websites and mobile apps via single API.
 
@@ -379,7 +379,7 @@ as an example with the provided keys the SP's JWKS endpoint's response looks lik
   "keys":[
     {
       "kty":"RSA",
-      "kid":"dllgRcT7LhEkqbnod6QGBHl8veqgZenwdB3RV2OJkY",
+      "kid":"dl-lgRcT7LhEkqbnod6QGBHl8veqgZenwdB3RV2OJkY",
       "use":"sig",
       "n":"ymeGHGpfRUdQe0VmPei3ARFBjlpVrK06RpUF3PJATGkNwBoX4j6LIJuacTnmLOiTlj84qy8ggLmoKZqai6JVsGQV-ThlCcRoujHCkNq8eebLBu0craNd62m-fXDfqrZ5TG7fTg6Da4Miv1rC2_hF5Cs3IukAJwHnbNSOY0Lq93jgV4fAt5BbpTttWKU_wBL-Pkei3Yd1pPoS9MmzLk_J8ZdoX72H_NzrXgO1AfoIFptdFMrV13jMZu5Y0NbggqPle1EQa_ErdLhqIOMfpllslxLPkZ_xq3-3ptogIFVOpnJ7CSLur-F-xUdl94-0kPu3jkGZFICRb9bkg1A1BHKiQw",
       "e":"AQAB"
@@ -394,6 +394,8 @@ as an example with the provided keys the SP's JWKS endpoint's response looks lik
   ]
 }
 ```
+
+Note that the kid's listed in the JWKS endpoint must match to the kid's you specify in the JWS tokens. When using the sandbox environment, be careful to use the kid's mentioned in the above example and not one's you generate yourself.
 
 ## 13. Public Sandbox for customer testing
 
