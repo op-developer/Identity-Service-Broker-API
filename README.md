@@ -1,6 +1,6 @@
 # Service Provider API for OP Identity Service Broker
 
-2019-05-27
+2019-05-28
 
 OP Identification Service Broker allows Service Providers to implement strong electronic identification (Finnish bank credentials, Mobile ID) easily to websites and mobile apps via single API.
 
