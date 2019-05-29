@@ -1,6 +1,6 @@
 # Service Provider API for OP Identity Service Broker
 
-2019-05-27
+2019-05-28
 
 OP Identification Service Broker allows Service Providers to implement strong electronic identification (Finnish bank credentials, Mobile ID) easily to websites and mobile apps via single API.
 
@@ -31,6 +31,7 @@ Table of contents:
 18. Extra material
 19. Support
 20. Pricing
+21. Watching changes
 
 ## 1. Definitions
 
@@ -146,7 +147,7 @@ API errors:
 
 | Error | Description | Action |
 | --- | --- | --- |
-| 404 Not found / Service provider not found | the given client_id is not valid | error is shown on ISB |
+| 404 Not found | the given client_id is not valid | error is shown on ISB |
 
 ## 7. GET/POST /oauth/authorize
 
@@ -155,7 +156,7 @@ To initiate the identification process the service provider directs the user to 
 - **client_id** is the client identifier that specifies which service provider is asking for identification.
 - **redirect_uri** specifies to which URI on your site (the service provider) you want the user to return to once identification is done. This URI must be registered with OP (except when using the sandbox environment) to prevent other services misusing your credentials.
 - **response_type** value must be `code`.
-- **scope** is a space separated list of scopes, or  basically sets of information requested. This must include `openid` and `personal_identity_code` . For example `openid profile personal_identity_code`. The `profile` includes `name`, `given_name`, `family_name` and `birthdate`. If the Service Provider's purpose for identifying the user is to create new identification methods, i.e. for example to create an user account with username and password, then the Service Provider must report such purpose by adding either `weak` (for weak identifiers, for example password account) or `strong` (for strong electronic identification which is only for members of the Finnish Trust Network) to the scopes. Using weak or strong as a purpose may affect pricing and depends on your contract.
+- **scope** is a space separated list of scopes, or  basically sets of information requested. This must include `openid` and `personal_identity_code` and can optionally include also `profile`, `weak` and `strong`. Other scope values are rejected. For example `openid profile personal_identity_code` is accectable. The `profile` includes `name`, `given_name`, `family_name` and `birthdate`. If the Service Provider's purpose for identifying the user is to create new identification methods, i.e. for example to create an user account with username and password, then the Service Provider must report such purpose by adding either `weak` (for weak identifiers, for example password account) or `strong` (for strong electronic identification which is only for members of the Finnish Trust Network) to the scopes. Using weak or strong as a purpose may affect pricing and depends on your contract.
 
 The following optional parameters may be used:
 - **ui_locales** selects user interface language (`fi`, `sv` or `en`).
@@ -186,13 +187,12 @@ API errors:
 
 | Error | Description | Action |
 | --- | --- | --- |
-| 400 Bad Request / invalid_request | if no valid SP can determined from parameters, redirect_uri is invalid or validation for state-parameter fails | error is shown on ISB |
-| access_denied | authorization has been canceled | redirected to the SP with error |
-| invalid_request | request parameter validation fails | redirected to the SP with error |
-| invalid_request_object | request JWS validation fails | redirected to the SP with error |
-| invalid_scope | openid or personal_identity_code scope is missing. Validation fails | redirected to the SP with error |
-| login_required | prompt-parameter can't have "login" value | redirected to the SP with error |
-| invalid_ftn_idp_id | invalid ftn_idp_id given when SP has the embedded Identity Service Broker UI | redirected to the SP with error |
+| invalid_request | request parameter validation fails | redirected to the SP with error and error description|
+| invalid_scope | openid or personal_identity_code scope is missing. Validation fails | redirected to the SP with error and error description|
+| access_denied | user cancels or returns back to SP | redirected to the SP with error and error description|
+| various validation errors | initial validation errors e.g. on invalid client_id, invalid or unsigned JWT etc.| error and error description are shown on ISB without return link back to SP |
+| various errors during identification | OIDC, Saml2 or Tupas identification might go wrong for a number of reasons | error and error description are shown on ISB with return link back to SP |
+
 
 ## 8. POST /oauth/token
 
@@ -213,6 +213,22 @@ Example identification request:
 
 `POST https://isb-test.op.fi/oauth/token`
 
+client_assertion is a JWS token and it might look like this (captured using the PHP based demo service provider example __See section 14__):
+```
+eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJzYWlwcHVha2F1cHBpYXMiLCJzdWIiOiJzYWlwcHVha2F1cHBpYXMiLCJhdWQiOiJodHRwczovL2lzYi10ZXN0Lm9wLmZpL29hdXRoL2F1dGhvcml6ZSIsImp0aSI6IjExOTk5YzA3N2VkMWQ1MjJjNGJjMmIiLCJleHAiOjE1NTkwNDI2ODJ9.IZGs7llsatuOWsV3IHNnO9hFtGrmNX-VIuYvpi8GI4Bi7isuOFX_8dmBXQ8gxjnvWCdG4nBuuwTWxIg1_l8801UqOM4jouHXsUF_ZnT72hPKzZSm2hRKiCJfj-uE6FJ0Vc4KTpxlWCrRmoMBUorOUYiJViNVkk36z_WQb0Whi_ObVEUsNoLjtuHxVoHNQ4CLoj-xq3pRb2BIp78i2fbu0mUf8wGSOzSE5sM7UcFpTX49KVSIqgSr81xlpDobh0KpmZer9YPdvlCMRWVPO6MLlGmmMjgjbkOxOeJ_e9BtiAHkhDjZYwM1mFlbgHxPHU46lfcjdcCI9stCnX3_sw4c6g
+```
+
+The following is a snapshot of the payload inside the JWS token captured using the PHP based demo service provider example __See section 14__  :
+```json
+{
+  "iss": "saippuakauppias",
+  "sub": "saippuakauppias",
+  "aud": "https://isb-test.op.fi/oauth/authorize",
+  "jti": "11999c077ed1d522c4bc2b",
+  "exp": 1559042682
+}
+```
+
 The API returns json data.
 
 Example of returned data:
@@ -227,10 +243,14 @@ Example of returned data:
 
 API errors:
 
-| Error | Description | Action |
-| --- | --- | --- |
-| 401 Unauthorized / invalid_client | the given client_id is not valid | error is shown on ISB |
-| 400 Bad Request / invalid_grant | the token has already been exchanged or token validation failed | error is shown on ISB |
+| Error | Description |
+| --- | --- |
+| bad_request | invalid input parameters |
+| unauthorized_client | the given client_id is not valid, assertion error etc. |
+| server_error | fetching client data failed  |
+
+
+The error and error description are shown on ISB with return link back to SP. In some cases however if certain library is used, an error is displayed on SP side and the error might be different than above.
 
 Parameter explanations:
 - **access_token** Access Token for the /oauth/profile API (OIDC UserInfo Endpoint)
@@ -287,10 +307,13 @@ Example identification request:
 
 API errors:
 
-| Error | Description | Action |
-| --- | --- | --- |
-| 401 Unauthorized / invalid_token | Invalid Access Token | error is shown on ISB |
-| 401 Unauthorized / invalid_client | the given client_id is not valid | error is shown on ISB |
+| Error | Description |
+| --- | --- |
+| bad_request | invalid input parameters |
+| unauthorized_client | e.g. authorization token is invalid |
+
+
+The error and error description are shown on ISB with return link back to SP. In some cases however if certain library is used, an error is displayed on SP side and the error might be different than above.
 
 The API returns json data. The information received depends on the scope of identification request and on what attributes are available. Do note that not all sources of information have given name and family name available as separate attributes. The following attributes may be available currently:
 
@@ -328,7 +351,7 @@ SP needs to publish two public keys in it's JWKS endpoint:
 - key for identity token encrypting
 
 ISB needs to publish one public key in it's JWKS endpoint:
-- key for verifying the signed identity token 
+- key for verifying the signed identity token
 
 The ISB's JWKS endpoint is publicly available.
 
@@ -360,7 +383,7 @@ as an example with the provided keys the SP's JWKS endpoint's response looks lik
       "use":"sig",
       "n":"ymeGHGpfRUdQe0VmPei3ARFBjlpVrK06RpUF3PJATGkNwBoX4j6LIJuacTnmLOiTlj84qy8ggLmoKZqai6JVsGQV-ThlCcRoujHCkNq8eebLBu0craNd62m-fXDfqrZ5TG7fTg6Da4Miv1rC2_hF5Cs3IukAJwHnbNSOY0Lq93jgV4fAt5BbpTttWKU_wBL-Pkei3Yd1pPoS9MmzLk_J8ZdoX72H_NzrXgO1AfoIFptdFMrV13jMZu5Y0NbggqPle1EQa_ErdLhqIOMfpllslxLPkZ_xq3-3ptogIFVOpnJ7CSLur-F-xUdl94-0kPu3jkGZFICRb9bkg1A1BHKiQw",
       "e":"AQAB"
-    },    
+    },
     {
       "kty":"RSA",
       "kid":"MfYGuONWQZabwwph02zJEqOQIPOV1PhEscgHch0QqD0",
@@ -423,3 +446,7 @@ For customer support please contact
 ## 20. Sales
 
 Please contact your own branch on contract matters.
+
+## 21. Watching changes
+
+The API might change in the future. Please enable watch-functionality as [instructed here](https://help.github.com/en/articles/watching-and-unwatching-repositories) to get notified when the API changes.
