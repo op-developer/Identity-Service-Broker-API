@@ -1,6 +1,6 @@
 # Service Provider API for OP Identity Service Broker
 
-2019-05-28
+2019-07-02
 
 OP Identification Service Broker allows Service Providers to implement strong electronic identification (Finnish bank credentials, Mobile ID) easily to websites and mobile apps via single API.
 
@@ -215,7 +215,7 @@ Example identification request:
 
 client_assertion is a JWS token and it might look like this (captured using the PHP based demo service provider example __See section 14__):
 ```
-eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJzYWlwcHVha2F1cHBpYXMiLCJzdWIiOiJzYWlwcHVha2F1cHBpYXMiLCJhdWQiOiJodHRwczovL2lzYi10ZXN0Lm9wLmZpL29hdXRoL2F1dGhvcml6ZSIsImp0aSI6IjExOTk5YzA3N2VkMWQ1MjJjNGJjMmIiLCJleHAiOjE1NTkwNDI2ODJ9.IZGs7llsatuOWsV3IHNnO9hFtGrmNX-VIuYvpi8GI4Bi7isuOFX_8dmBXQ8gxjnvWCdG4nBuuwTWxIg1_l8801UqOM4jouHXsUF_ZnT72hPKzZSm2hRKiCJfj-uE6FJ0Vc4KTpxlWCrRmoMBUorOUYiJViNVkk36z_WQb0Whi_ObVEUsNoLjtuHxVoHNQ4CLoj-xq3pRb2BIp78i2fbu0mUf8wGSOzSE5sM7UcFpTX49KVSIqgSr81xlpDobh0KpmZer9YPdvlCMRWVPO6MLlGmmMjgjbkOxOeJ_e9BtiAHkhDjZYwM1mFlbgHxPHU46lfcjdcCI9stCnX3_sw4c6g
+eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJzYWlwcHVha2F1cHBpYXMiLCJzdWIiOiJzYWlwcHVha2F1cHBpYXMiLCJhdWQiOiJodHRwczovL2lzYi10ZXN0Lm9wLmZpL29hdXRoL3Rva2VuIiwianRpIjoiNThkMWQ4ODk3OGIwYTY4MDliODg1NSIsImV4cCI6MTU2MjA3NjY1N30.GiIviTLsdTkrEfFNXnCQZnlJOMBss1bcxp_fOIJx9rrlLo3QHlW1KLIPv4RCusH7CVqiRyGaXMz5V0-eFBPMrOLU68N1GxRIaJErZCUyU1uasP-qdEANJExwbrvOJ4Xt0wT51BVVdNwUgchkbjKY62wjj-ywHogpID2tI6vLS98uoWBq09sb_aZL9bLFLvNh85IJzAfOH748bxSByEtL0_-xTmYJBe4D_5Z5YDunkSjl4-SDts0ETl-0jdOPm8-ps2LdcFoGnwbNU_6Wp4JCggUqOP4F8JS-M1U0GeqEMvVLpURjQOAt06H-I-ppmnhAfibSeslmTw4FiTfVVaSHDA
 ```
 
 The following is a snapshot of the payload inside the JWS token captured using the PHP based demo service provider example __See section 14__  :
@@ -223,9 +223,9 @@ The following is a snapshot of the payload inside the JWS token captured using t
 {
   "iss": "saippuakauppias",
   "sub": "saippuakauppias",
-  "aud": "https://isb-test.op.fi/oauth/authorize",
-  "jti": "11999c077ed1d522c4bc2b",
-  "exp": 1559042682
+  "aud": "https://isb-test.op.fi/oauth/token",
+  "jti": "58d1d88978b0a6809b8855",
+  "exp": 1562076657
 }
 ```
 
@@ -287,19 +287,19 @@ Example:
 
 ```json
 {
-  "iss": "https://identity-service-broker.docker",
-  "sub": "d71101b1-b993-4b0c-864d-3323d5d85500",
-  "aud": "http://testitapausoidc-url.fi/oidc/return",
-  "exp": 1561718757,
-  "iat": 1561718157,
+  "iss": "https://isb-test.op.fi",
+  "sub": "59cc74ea-40d7-4000-85c6-e5f7c2e14205",
+  "aud": "saippuakauppias",
+  "exp": 1562076657,
+  "iat": 1562076057,
   "acr": "http://ftn.ficora.fi/2017/loatest2",
-  "nonce": "9e71f49519a08cc51106e0",
+  "nonce": "ab960b7480a00047fb0d23",
   "name": "von Möttonen Matti Matias",
   "given_name": "Matti Matias",
   "family_name": "von Möttonen",
   "birthdate": "1900-01-01",
   "personal_identity_code": "010100-969P",
-  "auth_time": 1561718157
+  "auth_time": 1562076057
 }
 ```
 
