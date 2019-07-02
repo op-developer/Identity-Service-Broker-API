@@ -162,7 +162,7 @@ The following optional parameters may be used:
 - **ui_locales** selects user interface language (`fi`, `sv` or `en`).
 - **nonce** value is passed on to identity token as is. Use of `nonce` is highly recommended. It MUST contain at least 128 bits of entropy (for example at least 22 random characters AZ, a-z, 0-9). SP should make sure that the `nonce` attribute in the ID Token matches the value of sent `nonce`.
 - **prompt** can be set to `consent` to indicate that the user should be asked to consent to personal data being transferred. In this case the Identity Service Broker will display a verification screen after the user has been authenticated.
-- **state** is an opaque value you can use to maintain state between request and callback. Use of `state` is recommended. It  MUST contain at least 128 bits of entropy (for example at least 22 random characters AZ, a-z, 0-9)SP should make sure that the state-parameter it sends matches the state-parameter is receives in response to the redirect_uri.
+- **state** is an opaque value you can use to maintain state between request and callback. Use of `state` is recommended. SP should make sure that the state-parameter it sends matches the state-parameter is receives in response to the redirect_uri.
 - **ftn_idp_id** shall be delivered if the SP has the embedded Identity Service Broker UI. Parameter contains the id of the user chosen idp.
 
 The JWS token must be signed with the RS256 algorithm with SP's signing key.
