@@ -160,9 +160,9 @@ To initiate the identification process the service provider directs the user to 
 
 The following optional parameters may be used:
 - **ui_locales** selects user interface language (`fi`, `sv` or `en`).
-- **nonce** value is passed on to identity token as is.
+- **nonce** value is passed on to identity token as is. Use of `nonce` is highly recommended. It MUST contain at least 128 bits of entropy (for example at least 22 random characters AZ, a-z, 0-9). SP should make sure that the `nonce` attribute in the ID Token matches the value of sent `nonce`.
 - **prompt** can be set to `consent` to indicate that the user should be asked to consent to personal data being transferred. In this case the Identity Service Broker will display a verification screen after the user has been authenticated.
-- **state** is an opaque value you can use to maintain state between request and callback. Use of `state` is recommended.
+- **state** is an opaque value you can use to maintain state between request and callback. Use of `state` is recommended. SP should make sure that the state-parameter it sends matches the state-parameter is receives in response to the redirect_uri.
 - **ftn_idp_id** shall be delivered if the SP has the embedded Identity Service Broker UI. Parameter contains the id of the user chosen idp.
 
 The JWS token must be signed with the RS256 algorithm with SP's signing key.
@@ -205,7 +205,7 @@ The actual user identity token from the token endpoint can be fetched using the 
 The client_assertion is signed using the SP's signing key and must contain the following claims:
 - **iss** Issuer. This must contain the client_id.
 - **sub** Subject. This must contain the client_id.
-- **aud** Audience. The aud (audience) Claim. ISB's token endpoint URL.
+- **aud** Audience. The aud (audience) Claim. This must match the ISB's token endpoint URL.
 - **jti** JWT ID. A unique identifier for the token, which can be used to prevent reuse of the token. These tokens must only be used once.
 - **exp** Expiration time for the token. This is seconds since UNIX epoch (UTC). Suggested time is 600 seconds in the future.
 
@@ -274,19 +274,32 @@ The information received depends on the scope of identification request and on w
 
 In addition there are these standard attributes:
 
-- **auth_time**: Time of authentication in seconds since UNIX epoch
+- **iss**: Issuer. This should be the same as `issuer` key in .well-known/openid-configuration metadata. __See section 11__. SP can compare this value to the key value from metadata.
 - **sub**: Subject identifier, not persistent, feel free to ignore
+- **aud**: Audience this ID Token is intended for. It MUST contain the SP `client_id`
+- **exp**: Expiration time in seconds since UNIX epoch on or after which the ID Token MUST NOT be accepted for processing.
+- **iat**: Time at which the JWT was issued in seconds since UNIX epoch
+- **auth_time**: Time of authentication in seconds since UNIX epoch
+- **nonce**: Case sensitive string from the authentication request to associate an end-user with an ID token and to mitigate replay attacks. SP MUST verify that the `nonce` attribute value is equal to the value of the `nonce` parameter sent in the authentication request. In case there was no `nonce` parameter sent in the authentication request, this attribute is not used.
+- **acr**:  The Authentication Context Class Reference string for this authentication transaction
 
 Example:
 
 ```json
 {
-  "sub": "a589adb6-1550-4b17-90c4-a19e8c3f3c0e",
+  "iss": "https://identity-service-broker.docker",
+  "sub": "d71101b1-b993-4b0c-864d-3323d5d85500",
+  "aud": "http://testitapausoidc-url.fi/oidc/return",
+  "exp": 1561718757,
+  "iat": 1561718157,
+  "acr": "http://ftn.ficora.fi/2017/loatest2",
+  "nonce": "9e71f49519a08cc51106e0",
   "name": "von Möttonen Matti Matias",
   "given_name": "Matti Matias",
   "family_name": "von Möttonen",
   "birthdate": "1900-01-01",
-  "auth_time": 1519629890
+  "personal_identity_code": "010100-969P",
+  "auth_time": 1561718157
 }
 ```
 
