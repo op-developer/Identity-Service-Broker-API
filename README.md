@@ -1,6 +1,6 @@
 # Service Provider API for OP Identity Service Broker
 
-2019-07-02
+2019-08-07
 
 OP Identification Service Broker allows Service Providers to implement strong electronic identification (Finnish bank credentials, Mobile ID) easily to websites and mobile apps via single API.
 
@@ -243,14 +243,20 @@ Example of returned data:
 
 API errors:
 
-| Error | Description |
-| --- | --- |
-| bad_request | invalid input parameters |
-| unauthorized_client | the given client_id is not valid, assertion error etc. |
-| server_error | fetching client data failed  |
+| Error code | Error | Error description | Description
+| --- | --- | --- | --- |
+| 400 Bad Request | unauthorized_client | invalid assertion | client_assertion or client_assertion_type are invalid |
+| 400 Bad Request | invalid_request | client information fetching failed | client_id in request is unknown |
+| 400 Bad Request | invalid_request | invalid grant | e.g. authorization code already exchanged |
 
 
-The error and error description are shown on ISB with return link back to SP. In some cases however if certain library is used, an error is displayed on SP side and the error might be different than above.
+The error and error description are returned to SP as json together with error code.
+```json
+{
+  "error":"unauthorized_client",
+  "error_description":"invalid%20assertion"
+}
+```
 
 Parameter explanations:
 - **access_token** Access Token for the /oauth/profile API (OIDC UserInfo Endpoint)
@@ -320,15 +326,16 @@ Example identification request:
 
 API errors:
 
-| Error | Description |
-| --- | --- |
-| bad_request | invalid input parameters |
-| unauthorized_client | e.g. authorization token is invalid |
+in case of error the ISB returns error code back to the SP with www-authenticate header. This header contains the error details as follows.
+
+| Error code | www-authenticate header contents | description |
+| --- | --- | --- |
+| 401 Unauthorized | bearer | authorization header missing from request or invalid |
+| 401 Unauthorized | bearer, error="invalid_token" | e.g. authorization token is invalid |
+| 400 Bad Request | error="invalid_request",error_description="invalid_client" | Unknown client_id in profile request |
 
 
-The error and error description are shown on ISB with return link back to SP. In some cases however if certain library is used, an error is displayed on SP side and the error might be different than above.
-
-The API returns json data. The information received depends on the scope of identification request and on what attributes are available. Do note that not all sources of information have given name and family name available as separate attributes. The following attributes may be available currently:
+The API returns json data in succesful scenario. The information received depends on the scope of identification request and on what attributes are available. Do note that not all sources of information have given name and family name available as separate attributes. The following attributes may be available currently:
 
 - **birthdate**: Birth date
 - **given_name**: Given name
