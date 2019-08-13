@@ -435,9 +435,10 @@ These id's and keys are used for the Sandbox environment:
 
 ## 14. Service Provider code examples
 
-Currently there is PHP-based service provider demo application available. See https://github.com/op-developer/Identity-Service-Broker-integration-example .
+OP Provides following Service Provider demo applications:
 
-There is also Java-based service provider demo application available. See https://github.com/op-developer/Identity-Service-Broker-integration-java-example .
+- PHP-based: https://github.com/op-developer/Identity-Service-Broker-integration-example
+- Java-based: https://github.com/op-developer/Identity-Service-Broker-integration-java-example
 
 ## 15. Libraries for Service Provider
 
