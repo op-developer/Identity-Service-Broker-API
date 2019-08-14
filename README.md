@@ -1,6 +1,6 @@
 # Service Provider API for OP Identity Service Broker
 
-2019-08-07
+2019-08-13
 
 OP Identification Service Broker allows Service Providers to implement strong electronic identification (Finnish bank credentials, Mobile ID) easily to websites and mobile apps via single API.
 
@@ -24,14 +24,15 @@ Table of contents:
 11. GET /.well-known/openid-configuration
 12. JWKS
 13. Public Sandbox for customer testing
-14. Service Provider code example
+14. Service Provider code examples
 15. Libraries for Service Provider
 16. Javascript
 17. PHP
-18. Extra material
-19. Support
-20. Pricing
-21. Watching changes
+18. Java
+19. Extra material
+20. Support
+21. Pricing
+22. Watching changes
 
 ## 1. Definitions
 
@@ -432,9 +433,12 @@ These id's and keys are used for the Sandbox environment:
 - **Token encryption / decryption key**: See `sandbox-sp-encryption-key.pem`
 - **Signing key**: See `sandbox-sp-signing-key.pem`
 
-## 14. Service Provider code example
+## 14. Service Provider code examples
 
-Currently there is PHP-based service provider demo application available. See https://github.com/op-developer/Identity-Service-Broker-integration-example .
+OP Provides the following Service Provider demo applications:
+
+- PHP-based: https://github.com/op-developer/Identity-Service-Broker-integration-example
+- Java-based: https://github.com/op-developer/Identity-Service-Broker-integration-java-example
 
 ## 15. Libraries for Service Provider
 
@@ -452,21 +456,25 @@ oauth2-client makes it simple to integrate your Service Provider application wit
 
 Jose-php can be used to decrypt and verify the identity token. See https://github.com/nov/jose-php .
 
-## 18. Extra material
+## 18. Java
+
+Nimbus JOSE+JWT is a Java library for Javascript Object Signing and Encryption (JOSE) and JSON Web Tokens (JWT). See https://mvnrepository.com/artifact/com.nimbusds/nimbus-jose-jwt . This library is used in the Java based integration example. __See section 14__
+
+## 19. Extra material
 
 To learn more about OpenID Connect, see the specification: https://openid.net/specs/openid-connect-core-1_0.html
 
-## 19. Support
+## 20. Support
 If you have feature requests or technical problems please submit an issue on Github.
 
 For customer support please contact
 - **corporate customers** +358 100 05151
 - **email** verkkopainikkeet@op.fi
 
-## 20. Sales
+## 21. Sales
 
 Please contact your own branch on contract matters.
 
-## 21. Watching changes
+## 22. Watching changes
 
 The API might change in the future. Please enable watch-functionality as [instructed here](https://help.github.com/en/articles/watching-and-unwatching-repositories) to get notified when the API changes.
