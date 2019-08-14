@@ -435,7 +435,7 @@ These id's and keys are used for the Sandbox environment:
 
 ## 14. Service Provider code examples
 
-OP Provides following Service Provider demo applications:
+OP Provides the following Service Provider demo applications:
 
 - PHP-based: https://github.com/op-developer/Identity-Service-Broker-integration-example
 - Java-based: https://github.com/op-developer/Identity-Service-Broker-integration-java-example
