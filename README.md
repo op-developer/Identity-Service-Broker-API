@@ -1,6 +1,6 @@
 # Service Provider API for OP Identity Service Broker
 
-2019-08-13
+2019-08-19
 
 OP Identification Service Broker allows Service Providers to implement strong electronic identification (Finnish bank credentials, Mobile ID) easily to websites and mobile apps via single API.
 
@@ -416,7 +416,7 @@ as an example with the provided keys the SP's JWKS endpoint's response looks lik
 }
 ```
 
-Note that the kid's listed in the JWKS endpoint must match to the kid's you specify in the JWS tokens. When using the sandbox environment, be careful to use the kid's mentioned in the above example and not one's you generate yourself.
+Note that the kid's listed in the JWKS endpoint must match to the kid's you specify in the JWS tokens. When using the sandbox environment, be careful to use the kid's mentioned in the above example and not one's you generate yourself. Because the sandbox environment uses predefined keys it does not call your JWKS endpoint. If you wish to test your JWKS endpoint, you can do it by comparing your output against the contents of `sp-sample-jwks.json` in this repository.
 
 ## 13. Public Sandbox for customer testing
 
