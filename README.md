@@ -1,6 +1,6 @@
 # Service Provider API for OP Identity Service Broker
 
-2019-08-19
+2019-09-06
 
 OP Identification Service Broker allows Service Providers to implement strong electronic identification (Finnish bank credentials, Mobile ID) easily to websites and mobile apps via single API.
 
@@ -248,6 +248,7 @@ API errors:
 | --- | --- | --- | --- |
 | 400 Bad Request | unauthorized_client | invalid assertion | client_assertion or client_assertion_type are invalid |
 | 400 Bad Request | invalid_request | client information fetching failed | client_id in request is unknown |
+| 400 Bad Request | invalid_request | parameter validation failed | required request parameters missing or contains incorrect information |
 | 400 Bad Request | invalid_request | invalid grant | e.g. authorization code already exchanged |
 
 
