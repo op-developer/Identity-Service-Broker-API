@@ -428,7 +428,7 @@ Note that the kid's listed in the JWKS endpoint must match to the kid's you spec
 
 About ISB key rotation.
 
-ISB rotates the signing key once a week in production. To help testing, the signing key is rotated daily in the Sandbox environment. Below picture illustrates the lifecycle of the keys.
+ISB rotates the signing key once a week in production. To help testing, the signing key is rotated daily in the Sandbox environment. The figure below illustrates the lifecycle of the keys.
 
 ![Key rotation](./key_rotation.png?raw=true)
 
