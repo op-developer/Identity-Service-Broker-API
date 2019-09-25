@@ -1,6 +1,6 @@
 # Service Provider API for OP Identity Service Broker
 
-2019-09-06
+2019-09-25
 
 OP Identification Service Broker allows Service Providers to implement strong electronic identification (Finnish bank credentials, Mobile ID) easily to websites and mobile apps via single API.
 
@@ -366,7 +366,7 @@ We provide an optional OpenID Discovery metadata endpoint. It may be used to con
 
 The JWKS endpoints are used to exchange public keys between parties. Both SP and ISB have a JWKS endpoint to publish their own public keys. The SP's JWKS endpoint URL has to be registered with OP in the production environment.
 
-In the Sandbox there is no need to implement JWKS endpoint in the SP end as the ISB uses provided keys, but it is a good idea to implement functionality in the SP end to fetch the ISB signing key from the ISB's JWKS endpoint instead of using the provided keys because this is mandatory in the production.
+In the Sandbox there is no need to implement JWKS endpoint in the SP end as the ISB uses provided keys, but SP must fetch the ISB signing key from the ISB's JWKS endpoint.
 
 SP needs to publish two public keys in it's JWKS endpoint:
 - key for verifying both the signed /oauth/authorize request JWS token and the signed JWS token in client_assertion field in the /oauth/token request.
@@ -389,6 +389,13 @@ Example response:
       "kid":"-DNF8ccKbmJ-oPVyeoIRaER4x8BI5Sqhvyr-UPk4Do4",
       "use":"sig",
       "n":"w1f2iqKttSHq8U93wGQMFyx11NtGMU_XOm8nitErtCRfdTUFlNmNq-4bbhn3Y9nY2yMqhJAJPubLVaTmdmAHy9NY45nrRVAXcIcazaKmcHLlNFNqFqMgrd3SwDE0nMB7SjwC0OwUBXIB97awWrcryZq79vIly9xtha63osbdXBSJI2E7CdOZaUBSo_jQl1Mp4Kn525yHCTqdrwze6u3JMqsKsrDojc_4HcFLQicHgaq5cKy1qSBO_D1P8PsDT7BRuHXqKewzAp4Tg-EYoVv32cEWXMJuCFG5fkImUh_oefY48I-Bp9eGaGV0H3nMF_xng0UZJ03-vAayetforXsmaw",
+      "e":"AQAB"
+    },
+    {
+      "kty":"RSA",
+      "kid":"EBSP_-Zc5OfltLHmNQ-SD7M1WoUM5ZCIcvyCG-peVDc",
+      "use":"sig",
+      "n":"o51QCIqxd-t5LjSuPwEikz9b4UTHaGZp8TGjXXO9i7Zsb1ClzbUGw80AMZtcjWt6Mh25vLVOLarCLkAZySOPFetIA4zCqo8LQj2k3kndCLAe-X5JCo4zVqQArNGSQ1F2kXWMTLrfv-36XA2HKs6ngrk8HdLm3wgShFOZ11Da6l-j8OrgYzRTOWOpwHJSQvT9zTH-ZNGlfdqCoxX9d-CrLNk2loo2-OYGl3bWxhsSLNpxPZDHu0ufOH2kiyp_wvh2yIuhvQksiwos8lBu1ns6msCEjLwSfx9YlJuv9djeV241GFQxp93qZP1vpIOTuIL-BWhog3nJYfur7mWzCQQigZ",
       "e":"AQAB"
     }
   ]
@@ -417,7 +424,22 @@ as an example with the provided keys the SP's JWKS endpoint's response looks lik
 }
 ```
 
-Note that the kid's listed in the JWKS endpoint must match to the kid's you specify in the JWS tokens. When using the sandbox environment, be careful to use the kid's mentioned in the above example and not one's you generate yourself. Because the sandbox environment uses predefined keys it does not call your JWKS endpoint. If you wish to test your JWKS endpoint, you can do it by comparing your output against the contents of `sp-sample-jwks.json` in this repository.
+Note that the kid's listed in the JWKS endpoint must match to the kid's you specify in the JWS tokens. When using the sandbox environment, be careful to use the kid's mentioned in the above example and not one's you generate yourself. Because the sandbox environment uses predefined keys the ISB does not call your JWKS endpoint. If you wish to test your JWKS endpoint, you can do it by comparing your output against the contents of `sp-sample-jwks.json` in this repository.
+
+About ISB key rotation.
+
+ISB rotates the signing key once a week in production. To help testing, the signing key is rotated daily in the Sandbox environment. Below picture illustrates the lifecycle of the keys.
+
+![Key rotation](./key_rotation.png?raw=true)
+
+- CREATE, new key is created
+- WARM-UP, key is published in the JWKS but not in use
+- NORMAL USE, key is in use
+- COOLDOWN, key is still published in the JWKS and is not in use
+- TAIL, key is not published anymore in the JWKS, key is not in use
+- DELETION, key is deleted
+
+Caching the keys fetched from the JWKS endpoint is a good idea, but make sure that the refresh mechanism supports the ISB lifecycle, and there is a forced cache refresh in case key is not found.
 
 ## 13. Public Sandbox for customer testing
 
