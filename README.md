@@ -1,6 +1,6 @@
 # Service Provider API for OP Identity Service Broker
 
-2019-09-25
+2019-09-30
 
 OP Identification Service Broker allows Service Providers to implement strong electronic identification (Finnish bank credentials, Mobile ID) easily to websites and mobile apps via single API.
 
@@ -190,10 +190,12 @@ API errors:
 | --- | --- | --- |
 | invalid_request | request parameter validation fails | redirected to the SP with error and error description|
 | invalid_scope | openid or personal_identity_code scope is missing. Validation fails | redirected to the SP with error and error description|
-| access_denied | user cancels or returns back to SP | redirected to the SP with error and error description|
+| access_denied | e.g. validation error | redirected to the SP with error and error description|
+| cancel | user cancel | redirected to the SP with error and error description|
 | various validation errors | initial validation errors e.g. on invalid client_id, invalid or unsigned JWT etc.| error and error description are shown on ISB without return link back to SP |
 | various errors during identification | OIDC, Saml2 or Tupas identification might go wrong for a number of reasons | error and error description are shown on ISB with return link back to SP |
 
+In case the SP gets error code "cancel" with error description "user cancel" it means that the end user has canceled identification when the ISB hosted UI is being used. If the SP gets this error when using it's own embedded Identity Service Broker UI, it means that the end user has canceled identification on one of the Identity Providers, but might want to continue identification with another Identity Provider. In this case the SP should just simply display it's own embedded Identity Service Broker UI again.
 
 ## 8. POST /oauth/token
 
