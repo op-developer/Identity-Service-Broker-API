@@ -1,6 +1,6 @@
 # Service Provider API for OP Identity Service Broker
 
-2019-09-30
+2019-10-07
 
 OP Identification Service Broker allows Service Providers to implement strong electronic identification (Finnish bank credentials, Mobile ID) easily to websites and mobile apps via single API.
 
@@ -155,7 +155,8 @@ API errors:
 To initiate the identification process the service provider directs the user to OP's OIDC endpoint either by redirect or by direct link. The request parameters are passed to the ISB in a signed JWS token. The token is sent in the GET request's query string as `request` parameter or in the POST request in `payload` as a JSON having structure `{request: <JWS_TOKEN>}`. The following parameters are supported in the authorization request as WJS token claims:
 
 - **client_id** is the client identifier that specifies which service provider is asking for identification.
-- **redirect_uri** specifies to which URI on your site (the service provider) you want the user to return to once identification is done. This URI must be registered with OP (except when using the sandbox environment) to prevent other services misusing your credentials.
+- **redirect_uri** specifies to which URI on your site (the service provider) you want the user to return to once identification is done.
+Please note! In the production environment this URI must be registered beforehand with OP with the technical form to prevent other services misusing your credentials. In case the given redirect_uri parameter does not match the registered URI the /oauth/authorize endpoint returns an error and identification is finished.
 - **response_type** value must be `code`.
 - **scope** is a space separated list of scopes, or  basically sets of information requested. This must include `openid` and `personal_identity_code` and can optionally include also `profile`, `weak` and `strong`. Other scope values are rejected. For example `openid profile personal_identity_code` is accectable. The `profile` includes `name`, `given_name`, `family_name` and `birthdate`. If the Service Provider's purpose for identifying the user is to create new identification methods, i.e. for example to create an user account with username and password, then the Service Provider must report such purpose by adding either `weak` (for weak identifiers, for example password account) or `strong` (for strong electronic identification which is only for members of the Finnish Trust Network) to the scopes. Using weak or strong as a purpose may affect pricing and depends on your contract.
 
@@ -451,6 +452,7 @@ The public Sandbox differs from the production in three major ways.
 - To use the Sandbox environment you need to use the separate API endpoints described above.
 - Common shared credentials and client id are used for the Sandbox environment. Because the sandbox does not require registration all developers need to use the provided keys (instead of their own keys).
 - SP do not need to implement JWKS-endpoint as the ISB uses provided keys.
+- redirect_uri does not have to agreed with OP in Sandbox.
 
 These id's and keys are used for the Sandbox environment:
 
