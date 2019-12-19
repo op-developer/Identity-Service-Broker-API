@@ -1,6 +1,6 @@
 # Service Provider API for OP Identity Service Broker
 
-2019-10-07
+2019-12-19
 
 OP Identification Service Broker allows Service Providers to implement strong electronic identification (Finnish bank credentials, Mobile ID) easily to websites and mobile apps via single API.
 
@@ -137,12 +137,17 @@ Example of returned data:
         "ftn_idp_id": "fi-nordea"
     }
   ],
-  "isbProviderInfo": "OP Identity Service Broker is provided by OP Financial Group member cooperative banks and OP Corporate  Bank plc",
-  "isbConsent": "By continuing, I accept that the service provider will receive my name and personal identity code"
+  "isbProviderInfo": "The OP Identity Service Broker is provided by OP Financial Group member cooperative banks and OP Corporate Bank plc.",
+  "isbConsent": "By using the following means of authentication you accept that your personal ID code and name will be transmitted to the service provider.",
+  "disturbanceInfo":
+    {
+      "header":"Notification of disruption",
+      "text":"Network errors are causing some identifications to fail"
+    }
 }
 ```
 
-Service Provider needs to use and display these two fields `isbProviderInfo` and `isbConsent` on the UI.
+Service Provider needs to use and display these two fields `isbProviderInfo` and `isbConsent` on the UI. `DisturbanceInfo` is an optional field, which is only included in case a disturbance notification has been published. It gives information about identified disturbancies in the ISB service or in the Identity Providers. It is highly recommended to show this data to end users on the embedded Identity Service Broker UI. Both the `header` and the `text` are localised according to `lang` query parameter.
 
 API errors:
 
@@ -453,6 +458,7 @@ The public Sandbox differs from the production in three major ways.
 - Common shared credentials and client id are used for the Sandbox environment. Because the sandbox does not require registration all developers need to use the provided keys (instead of their own keys).
 - SP do not need to implement JWKS-endpoint as the ISB uses provided keys.
 - redirect_uri does not have to agreed with OP in Sandbox.
+- the /api/embedded-ui/{client_id} endpoint allways returns disturbanceInfo field in the returned Json data. It either contains real disturbance information of the Sandbox or contains a placeholder text: "This is a placeholder for disturbance information to help implementation". This is to help implementation of the UI.
 
 These id's and keys are used for the Sandbox environment:
 
