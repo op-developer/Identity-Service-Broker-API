@@ -458,7 +458,7 @@ The public Sandbox differs from the production in three major ways.
 - Common shared credentials and client id are used for the Sandbox environment. Because the sandbox does not require registration all developers need to use the provided keys (instead of their own keys).
 - SP do not need to implement JWKS-endpoint as the ISB uses provided keys.
 - redirect_uri does not have to agreed with OP in Sandbox.
-- the /api/embedded-ui/{client_id} endpoint allways returns disturbanceInfo field in the returned Json data. It either contains real disturbance information of the Sandbox or contains a placeholder text: "This is a placeholder for disturbance information to help implementation". This is to help implementation of the UI.
+- the /api/embedded-ui/{client_id} endpoint always returns disturbanceInfo field in the returned Json data. It either contains real disturbance information of the Sandbox or contains a placeholder text: "This is a placeholder for disturbance information to help implementation". This is to help implementation of the UI.
 
 These id's and keys are used for the Sandbox environment:
 
