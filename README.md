@@ -1,6 +1,6 @@
 # Service Provider API for OP Identity Service Broker
 
-2019-12-19
+2020-01-16
 
 OP Identification Service Broker allows Service Providers to implement strong electronic identification (Finnish bank credentials, Mobile ID) easily to websites and mobile apps via single API.
 
@@ -29,10 +29,11 @@ Table of contents:
 16. Javascript
 17. PHP
 18. Java
-19. Extra material
-20. Support
-21. Pricing
-22. Watching changes
+19. Python
+20. Extra material
+21. Support
+22. Pricing
+23. Watching changes
 
 ## 1. Definitions
 
@@ -138,7 +139,7 @@ Example of returned data:
     }
   ],
   "isbProviderInfo": "The OP Identity Service Broker is provided by OP Financial Group member cooperative banks and OP Corporate Bank plc.",
-  "isbConsent": "By using the following means of authentication you accept that your personal ID code and name will be transmitted to the service provider.",
+  "isbConsent": "During authentication, your personal ID and name are forwarded to the service provider.",
   "disturbanceInfo":
     {
       "header":"Notification of disruption",
@@ -163,7 +164,7 @@ To initiate the identification process the service provider directs the user to 
 - **redirect_uri** specifies to which URI on your site (the service provider) you want the user to return to once identification is done.
 Please note! In the production environment this URI must be registered beforehand with OP with the technical form to prevent other services misusing your credentials. In case the given redirect_uri parameter does not match the registered URI the /oauth/authorize endpoint returns an error and identification is finished. Redirect_uri must be using secure http schema.
 - **response_type** value must be `code`.
-- **scope** is a space separated list of scopes, or  basically sets of information requested. This must include `openid` and `personal_identity_code` and can optionally include also `profile`, `weak` and `strong`. Other scope values are rejected. For example `openid profile personal_identity_code` is accectable. The `profile` includes `name`, `given_name`, `family_name` and `birthdate`. If the Service Provider's purpose for identifying the user is to create new identification methods, i.e. for example to create an user account with username and password, then the Service Provider must report such purpose by adding either `weak` (for weak identifiers, for example password account) or `strong` (for strong electronic identification which is only for members of the Finnish Trust Network) to the scopes. Using weak or strong as a purpose may affect pricing and depends on your contract.
+- **scope** is a space separated list of scopes, or  basically sets of information requested. This must include `openid` and `personal_identity_code` and can optionally include also `profile`, `weak` and `strong`. Other scope values are rejected. For example `openid profile personal_identity_code` is accectable. The `profile` includes `name`, `given_name`, `family_name` and `birthdate`. If the Service Provider's purpose for identifying the user is to create new identification methods, i.e. for example to create an user account with username and password, then the Service Provider must report such purpose by adding either `weak` (for weak identifiers, for example password account) or `strong` (for strong electronic identification which is only for the officially licensed members of the Finnish Trust Network) to the scopes. Using weak or strong as a purpose may affect pricing and depends on your contract.
 
 The following optional parameters may be used:
 - **ui_locales** selects user interface language (`fi`, `sv` or `en`).
@@ -472,6 +473,7 @@ OP Provides the following Service Provider demo applications:
 
 - PHP-based: https://github.com/op-developer/Identity-Service-Broker-integration-example
 - Java-based: https://github.com/op-developer/Identity-Service-Broker-integration-java-example
+- Python-based: https://github.com/op-developer/Identity-Service-Broker-integration-python-example
 
 ## 15. Libraries for Service Provider
 
@@ -493,21 +495,26 @@ Jose-php can be used to decrypt and verify the identity token. See https://githu
 
 Nimbus JOSE+JWT is a Java library for Javascript Object Signing and Encryption (JOSE) and JSON Web Tokens (JWT). See https://mvnrepository.com/artifact/com.nimbusds/nimbus-jose-jwt . This library is used in the Java based integration example. __See section 14__
 
-## 19. Extra material
+## 19. Python
 
-To learn more about OpenID Connect, see the specification: https://openid.net/specs/openid-connect-core-1_0.html
+JWCrypto is an Python library implementation of the Javascript Object Signing and Encryption (JOSE) Web Standards as they are being developed in the JOSE IETF Working Group and related technology. See https://github.com/latchset/jwcrypto
 
-## 20. Support
+## 20. Extra material
+- To learn more about the OP Identity Service Broker, see: https://isb-test.op.fi/about?lang=en
+- To learn about the OP Identity Service Broker Privacy Notice, see: https://isb-test.op.fi/privacy-info?lang=en
+- To learn more about OpenID Connect, see the specification: https://openid.net/specs/openid-connect-core-1_0.html
+
+## 21. Support
 If you have feature requests or technical problems please submit an issue on Github.
 
 For customer support please contact
 - **corporate customers** +358 100 05151
 - **email** verkkopainikkeet@op.fi
 
-## 21. Sales
+## 22. Sales
 
 Please contact your own branch on contract matters.
 
-## 22. Watching changes
+## 23. Watching changes
 
 The API might change in the future. Please enable watch-functionality as [instructed here](https://help.github.com/en/articles/watching-and-unwatching-repositories) to get notified when the API changes.
