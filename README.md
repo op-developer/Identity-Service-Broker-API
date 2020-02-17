@@ -212,6 +212,12 @@ The actual user identity token from the token endpoint can be fetched using the 
 - **client_assertion_type** must be `urn:ietf:params:oauth:client-assertion-type:jwt-bearer`.
 - **client_assertion** is a signed JWS authentication token. The JWS must be signed with the RS256 algorithm with SP's signing key.
 
+Please make sure that you have header set to allow JSON response, and data in the POST request must be application/x-www-form-urlencoded
+
+    headers=dict(
+        Accept='application/json'
+    )
+
 The client_assertion is signed using the SP's signing key and must contain the following claims:
 - **iss** Issuer. This must contain the client_id.
 - **sub** Subject. This must contain the client_id.
