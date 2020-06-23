@@ -480,6 +480,7 @@ OP Provides the following Service Provider demo applications:
 - PHP-based: https://github.com/op-developer/Identity-Service-Broker-integration-example
 - Java-based: https://github.com/op-developer/Identity-Service-Broker-integration-java-example
 - Python-based: https://github.com/op-developer/Identity-Service-Broker-integration-python-example
+- Typescript-based: https://github.com/op-developer/Identity-Service-Broker-integration-typescript-example
 
 ## 15. Libraries for Service Provider
 
