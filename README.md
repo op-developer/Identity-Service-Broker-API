@@ -1,6 +1,6 @@
 # Service Provider API for OP Identity Service Broker
 
-2020-01-16
+2020-06-25
 
 OP Identification Service Broker allows Service Providers to implement strong electronic identification (Finnish bank credentials, Mobile ID) easily to websites and mobile apps via single API.
 
@@ -383,14 +383,14 @@ The JWKS endpoints are used to exchange public keys between parties. Both SP and
 
 In the Sandbox there is no need to implement JWKS endpoint in the SP end as the ISB uses provided keys, but SP must fetch the ISB signing key from the ISB's JWKS endpoint.
 
-SP needs to publish two public keys in it's JWKS endpoint:
+SP needs to publish two types of public keys in it's JWKS endpoint:
 - key for verifying both the signed /oauth/authorize request JWS token and the signed JWS token in client_assertion field in the /oauth/token request.
 - key for identity token encrypting
 
-ISB needs to publish one public key in it's JWKS endpoint:
+ISB publishes one type of public key in it's JWKS endpoint:
 - key for verifying the signed identity token
 
-The ISB's JWKS endpoint is publicly available.
+The ISB's JWKS endpoint is publicly available. Note that around the time of key rotation there are multiple sig-keys (both old and new) published at the same time.
 
 For example in Sandbox: `GET https://isb-test.op.fi/jwks/broker`.
 
