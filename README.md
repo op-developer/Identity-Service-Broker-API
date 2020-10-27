@@ -1,6 +1,6 @@
 # Service Provider API for OP Identity Service Broker
 
-2020-09-17
+2020-10-26
 
 OP Identification Service Broker allows Service Providers to implement strong electronic identification (Finnish bank credentials, Mobile ID) easily to websites and mobile apps via single API.
 
@@ -140,15 +140,18 @@ Example of returned data:
   ],
   "isbProviderInfo": "The OP Identity Service Broker is provided by OP Financial Group member cooperative banks and OP Corporate Bank plc.",
   "isbConsent": "During authentication, your personal ID and name are forwarded to the service provider.",
+  "privacyNoticeText": "OP privacy notice",
+  "privacyNoticeLink": "https://isb-test.op.fi/privacy-info?lang=en",
   "disturbanceInfo":
     {
-      "header":"Notification of disruption",
-      "text":"Network errors are causing some identifications to fail"
+      "header": "Notification of disruption",
+      "text": "Network errors are causing some identifications to fail"
     }
 }
 ```
 
-Service Provider needs to use and display these two fields `isbProviderInfo` and `isbConsent` on the UI. `DisturbanceInfo` is an optional field, which is only included in case a disturbance notification has been published. It gives information about identified disturbancies in the ISB service or in the Identity Providers. It is highly recommended to show this data to end users on the embedded Identity Service Broker UI. Both the `header` and the `text` are localised according to `lang` query parameter.
+Service Provider needs to use and display these fields: `isbProviderInfo`, `isbConsent`, `privacyNoticeText` and `privacyNoticeLink` on the UI.
+The `privacyNoticeLink` is a hyperlink to the OP's privacy notice page and the `privacyNoticeText` is the link text.  `DisturbanceInfo` is an optional field, which is only included in case a disturbance notification has been published. It gives information about identified disturbancies in the ISB service or in the Identity Providers. It is highly recommended to show this data to end users on the embedded Identity Service Broker UI. Both the `header` and the `text` are localised according to `lang` query parameter.
 
 API errors:
 
@@ -158,7 +161,7 @@ API errors:
 
 ## 7. GET/POST /oauth/authorize
 
-To initiate the identification process the service provider directs the user to OP's OIDC endpoint either by redirect or by direct link. The request parameters are passed to the ISB in a signed JWS token. The token is sent in the GET request's query string as `request` parameter or in the POST request in `payload` as a JSON having structure `{request: <JWS_TOKEN>}`. The following parameters are supported in the authorization request as WJS token claims:
+To initiate the identification process the service provider directs the user to OP's OIDC endpoint either by redirect or by direct link. The request parameters are passed to the ISB in a signed JWS token. The token is sent in the GET request's query string as `request` parameter or in the POST request in `payload` as a JSON having structure `{request: <JWS_TOKEN>}`. The following parameters are supported in the authorization request as JWS token claims:
 
 - **client_id** is the client identifier that specifies which service provider is asking for identification.
 - **redirect_uri** specifies to which URI on your site (the service provider) you want the user to return to once identification is done.
@@ -166,12 +169,15 @@ Please note! In the production environment this URI must be registered beforehan
 - **response_type** value must be `code`.
 - **scope** is a space separated list of scopes, or  basically sets of information requested. This must include `openid` and `personal_identity_code` and can optionally include also `profile`, `weak` and `strong`. Other scope values are rejected. For example `openid profile personal_identity_code` is accectable. The `profile` includes `name`, `given_name`, `family_name` and `birthdate`. If the Service Provider's purpose for identifying the user is to create new identification methods, i.e. for example to create an user account with username and password, then the Service Provider must report such purpose by adding either `weak` (for weak identifiers, for example password account) or `strong` (for strong electronic identification which is only for the officially licensed members of the Finnish Trust Network) to the scopes. Using weak or strong as a purpose may affect pricing and depends on your contract.
 
-The following optional parameters may be used:
+The following optional parameters (JWS token claims) may be used:
 - **ui_locales** selects user interface language (`fi`, `sv` or `en`).
 - **nonce** value is passed on to identity token as is. Use of `nonce` is highly recommended. It MUST contain at least 128 bits of entropy (for example at least 22 random characters AZ, a-z, 0-9). SP should make sure that the `nonce` attribute in the ID Token matches the value of sent `nonce`.
 - **prompt** can be set to `consent` to indicate that the user should be asked to consent to personal data being transferred. In this case the Identity Service Broker will display a verification screen after the user has been authenticated.
 - **state** is an opaque value you can use to maintain state between request and callback. Use of `state` is recommended. SP should make sure that the state-parameter it sends matches the state-parameter is receives in response to the redirect_uri.
 - **ftn_idp_id** shall be delivered if the SP has the embedded Identity Service Broker UI. Parameter contains the id of the user chosen idp.
+- **exp** the expiration time of the JWS token. This is seconds since UNIX epoch (UTC). Suggested time is 600 seconds in the future. If given, ISB checks that the JWS has not been expired. If it has been expired the ISB will response with error.
+- **jti** JWT ID. A unique identifier for JWS tokens, which can be used to prevent reuse of the token. These identifiers must only be used once. If given, ISB checks if this `jti` has already been used and if it has ISB will response with error.
+- **iss** Issuer. This must contain the client_id. If `jti` is given, this must be given as well.
 
 The JWS token must be signed with the RS256 algorithm with SP's signing key.
 
@@ -222,8 +228,8 @@ The client_assertion is signed using the SP's signing key and must contain the f
 - **iss** Issuer. This must contain the client_id.
 - **sub** Subject. This must contain the client_id.
 - **aud** Audience. The aud (audience) Claim. This must match the ISB's token endpoint URL.
-- **jti** JWT ID. A unique identifier for the token, which can be used to prevent reuse of the token. These tokens must only be used once.
-- **exp** Expiration time for the token. This is seconds since UNIX epoch (UTC). Suggested time is 600 seconds in the future.
+- **jti** JWT ID. A unique identifier for JWS tokens, which can be used to prevent reuse of the token. These identifiers must only be used once. ISB checks if this `jti` has already been used and if it has ISB will response with error.
+- **exp** Expiration time for the token. This is seconds since UNIX epoch (UTC). Suggested time is 600 seconds in the future. ISB checks that the JWS has not been expired. If it has been expired the ISB will response with error.
 
 Example identification request:
 
