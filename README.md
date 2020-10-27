@@ -175,8 +175,8 @@ The following optional parameters (JWS token claims) may be used:
 - **prompt** can be set to `consent` to indicate that the user should be asked to consent to personal data being transferred. In this case the Identity Service Broker will display a verification screen after the user has been authenticated.
 - **state** is an opaque value you can use to maintain state between request and callback. Use of `state` is recommended. SP should make sure that the state-parameter it sends matches the state-parameter is receives in response to the redirect_uri.
 - **ftn_idp_id** shall be delivered if the SP has the embedded Identity Service Broker UI. Parameter contains the id of the user chosen idp.
-- **exp** the expiration time of the JWS token. This is seconds since UNIX epoch (UTC). Suggested time is 600 seconds in the future. If given, ISB checks that the JWS has not been expired. If it has been expired the ISB will response with error.
-- **jti** JWT ID. A unique identifier for JWS tokens, which can be used to prevent reuse of the token. These identifiers must only be used once. If given, ISB checks if this `jti` has already been used and if it has ISB will response with error.
+- **exp** the expiration time of the JWS token. This is seconds since UNIX epoch (UTC). Suggested time is 600 seconds in the future. If given, ISB checks that the JWS has not expired. If it has expired the ISB will respond with an error.
+- **jti** JWT ID. A unique identifier for JWS tokens, which can be used to prevent reuse of the token. These identifiers must only be used once. If given, ISB checks if this `jti` has already been used and if it has ISB will respond with an error.
 - **iss** Issuer. This must contain the client_id. If `jti` is given, this must be given as well.
 
 The JWS token must be signed with the RS256 algorithm with SP's signing key.
@@ -228,8 +228,8 @@ The client_assertion is signed using the SP's signing key and must contain the f
 - **iss** Issuer. This must contain the client_id.
 - **sub** Subject. This must contain the client_id.
 - **aud** Audience. The aud (audience) Claim. This must match the ISB's token endpoint URL.
-- **jti** JWT ID. A unique identifier for JWS tokens, which can be used to prevent reuse of the token. These identifiers must only be used once. ISB checks if this `jti` has already been used and if it has ISB will response with error.
-- **exp** Expiration time for the token. This is seconds since UNIX epoch (UTC). Suggested time is 600 seconds in the future. ISB checks that the JWS has not been expired. If it has been expired the ISB will response with error.
+- **jti** JWT ID. A unique identifier for JWS tokens, which can be used to prevent reuse of the token. These identifiers must only be used once. ISB checks if this `jti` has already been used and if it has ISB will respond with an error.
+- **exp** Expiration time for the token. This is seconds since UNIX epoch (UTC). Suggested time is 600 seconds in the future. ISB checks that the JWS has not expired. If it has expired the ISB will respond with an error.
 
 Example identification request:
 
