@@ -151,7 +151,7 @@ Example of returned data:
 ```
 
 Service Provider needs to use and display these fields: `isbProviderInfo`, `isbConsent`, `privacyNoticeText` and `privacyNoticeLink` on the UI.
-The `privacyNoticeLink` is a hyperlink to the OP's privacy notice page and the `privacyNoticeText` is the link text.  `DisturbanceInfo` is an optional field, which is only included in case a disturbance notification has been published. It gives information about identified disturbancies in the ISB service or in the Identity Providers. It is highly recommended to show this data to end users on the embedded Identity Service Broker UI. Both the `header` and the `text` are localised according to `lang` query parameter.
+The `privacyNoticeLink` is a hyperlink to the OP's privacy notice page and the `privacyNoticeText` is the localised link text according to `lang` query parameter. `DisturbanceInfo` is an optional field, which is only included in case a disturbance notification has been published. It gives information about identified disturbancies in the ISB service or in the Identity Providers. It is highly recommended to show this data to end users on the embedded Identity Service Broker UI. Both the `header` and the `text` are localised according to `lang` query parameter.
 
 API errors:
 
