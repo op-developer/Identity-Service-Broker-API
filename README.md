@@ -1,6 +1,6 @@
 # Service Provider API for OP Identity Service Broker
 
-2020-10-27
+2022-09-29
 
 OP Identification Service Broker allows Service Providers to implement strong electronic identification (Finnish bank credentials, Mobile ID) easily to websites and mobile apps via single API.
 
@@ -8,7 +8,7 @@ To identify the user the Service Provider (your website) redirects the user to t
 
 ### Sandbox users
 
-OP Identity Service Provider does not require registration and uses fixed credentials (Client ID & encryption keys). __See section 13__.
+OP Identity Service Provider does not require registration and uses fixed credentials (Client ID & encryption keys). __See section 15__.
 
 Table of contents:
 1. Definitions
@@ -22,21 +22,25 @@ Table of contents:
 9. Identity token
 10. GET /oauth/profile
 11. GET /.well-known/openid-configuration
-12. JWKS
-13. Public Sandbox for customer testing
-14. Service Provider code examples
-15. Libraries for Service Provider
-16. Javascript
-17. PHP
-18. Java
-19. Python
-20. Extra material
-21. Support
-22. Pricing
-23. Watching changes
+12. GET /.well-known/openid-federation
+13. The Entity Statement of Service Provider
+14. JWKS
+15. Public Sandbox for customer testing
+16. Service Provider code examples
+17. Libraries for Service Provider
+18. Javascript
+19. PHP
+20. Java
+21. Python
+22. Extra material
+23. Support
+24. Pricing
+25. M72b changes
+26. Watching changes
 
 ## 1. Definitions
 
+- **Entity Statement** metadata describing a service (SP or ISB).
 - **Service Provider (SP)** is the service asking for the user identity.
 - **Identity Service Broker (ISB)** is the OP service that lets the user choose an identity provider and that passes the requested user identity information to the service provider.
 - **Identity Provider (IdP)** is a provider of identification, i.e. a Bank or mobile ID.
@@ -65,15 +69,19 @@ To identify users using the Identity Service Broker and the OIDC API for Service
 
   The OP OIDC profile endpoint for production use is `https://isb.op.fi/oauth/profile`. For testing please use the sandbox endpoint `https://isb-test.op.fi/oauth/profile`. This endpoint provides exactly the same information as the token endpoint and as such is redundant.
 
-* RSA keypair to sign requests
+* RSA key pair to sign requests
 
    Signing is used for verifying that requests originate from the SP. Signing is used in requests to two endpoints: /oauth/authorize and /oauth/token.
 
-To generate a 2048 bit RSA key run the command `openssl genrsa -out private.pem 2048` (you could replace the filename private.pem with one of your own choosing).
-
-* RSA keypair to decrypt identity token
+* RSA key pair to decrypt identity token
 
   OP will encrypt the identity token identifying the user with your public key and you will have to decrypt it with your private key. Keys are generated the same way as signing keys. Both encryption and signing public keys must be published in the SP's JKWS endpoint. Keep the private portions of these keypairs private.
+
+* RSA key pair to sign Service Provider JWKS and the Entity Statement
+
+  Signing is used for verifying that the JWKS originate from the SP or from the ISB. It is used to protect against hijacking the service.
+
+To generate a 2048 bit RSA key run the command `openssl genrsa -out private.pem 2048` (you could replace the filename private.pem with one of your own choosing).
 
 * OP JWKS endpoint
 
@@ -178,6 +186,7 @@ The following optional parameters (JWS token claims) may be used:
 - **exp** the expiration time of the JWS token. This is seconds since UNIX epoch (UTC). Suggested time is 600 seconds in the future. If given, ISB checks that the JWS has not expired. If it has expired the ISB will respond with an error.
 - **jti** JWT ID. A unique identifier for JWS tokens, which can be used to prevent reuse of the token. These identifiers must only be used once. If given, ISB checks if this `jti` has already been used and if it has ISB will respond with an error.
 - **iss** Issuer. This must contain the client_id. If `jti` is given, this must be given as well.
+- **ftn_spname**  Human readable name of the Service Provider the user is authenticating to.
 
 The JWS token must be signed with the RS256 algorithm with SP's signing key.
 
@@ -383,13 +392,112 @@ Example of returned data:
 
 We provide an optional OpenID Discovery metadata endpoint. It may be used to configure OAuth2 client implementations should they require it. The endpoint for production use is `https://isb.op.fi/.well-known/openid-configuration`. For testing please use the sandbox endpoint `https://isb-test.op.fi/.well-known/openid-configuration`.
 
-## 12. JWKS
+## 12. GET /.well-known/openid-federation
 
-The JWKS endpoints are used to exchange public keys between parties. Both SP and ISB have a JWKS endpoint to publish their own public keys. The SP's JWKS endpoint URL has to be registered with OP in the production environment.
+We provide an optional OpenId federation metadata endpoint containing the Entity Statement of the ISB. The metadata provided by this endpoint should not be automatically relied on by the SP, but should be manually reviewed. The endpoint for production use is `https://isb.op.fi/.well-known/openid-federation`. For testing please use the sandbox endpoint `https://isb-test.op.fi/.well-known/openid-federation`.
 
-In the Sandbox there is no need to implement JWKS endpoint in the SP end as the ISB uses provided keys, but SP must fetch the ISB signing key from the ISB's JWKS endpoint.
+The payload is a base64 encoded and signed JSON web token and contains e.g. the URI of the signed JWKS endpoint. The key used for signing is the JWKS signing key.
 
-SP needs to publish two types of public keys in it's JWKS endpoint:
+OP will inform the Service Providers when the metadata is updated.
+
+## 13. The Entity Statement of Service Provider
+
+SP needs to provide metadata of its service to the ISB in the integration phase and when the SP is rotating its long-lived JWKS signing key. This metadata is not exchanged programmatically but SP will provide it to the OP as instructed separately by OP. The metadata is a signed JSON web token.
+
+An example Entity Statement header and payload of the JSON web token:
+
+header:
+```json
+{
+  "alg": "RS256",
+  "typ": "entity-statement+jwt",
+  "kid": "dl-lgRcT7LhEkqbnod6QGBHl8veqgZenwdB3RV2OJkY"
+}
+```
+
+payload:
+```json
+{
+  "iss": "https://paras-saippuakauppias.com",
+  "sub": "https://paras-saippuakauppias.com",
+  "iat": 1664292031,
+  "exp": 1664382031,
+  "jwks": {
+    "keys": [
+      {
+        "keys": [
+          {
+            "kty": "RSA",
+            "kid": "dl-lgRcT7LhEkqbnod6QGBHl8veqgZenwdB3RV2OJkY",
+            "use": "sig",
+            "n": "ymeGHGpfRUdQe0VmPei3ARFBjlpVrK06RpUF3PJATGkNwBoX4j6LIJuacTnmLOiTlj84qy8ggLmoKZqai6JVsGQV-ThlCcRoujHCkNq8eebLBu0craNd62m-fXDfqrZ5TG7fTg6Da4Miv1rC2_hF5Cs3IukAJwHnbNSOY0Lq93jgV4fAt5BbpTttWKU_wBL-Pkei3Yd1pPoS9MmzLk_J8ZdoX72H_NzrXgO1AfoIFptdFMrV13jMZu5Y0NbggqPle1EQa_ErdLhqIOMfpllslxLPkZ_xq3-3ptogIFVOpnJ7CSLur-F-xUdl94-0kPu3jkGZFICRb9bkg1A1BHKiQw",
+            "e": "AQAB"
+          }
+        ]
+      }
+    ]
+  },
+  "metadata": {
+    "openid_relying_party": {
+      "redirect_uris": [
+        "https://paras-saippuakauppias.com/oauth/code"
+      ],
+      "application_type": "web",
+      "id_token_signed_response_alg": "RS256",
+      "id_token_encrypted_response_alg": "RSA-OAEP",
+      "id_token_encrypted_response_enc": "A128CBC-HS256",
+      "request_object_signing_alg": "RS256",
+      "token_endpoint_auth_method": "private_key_jwt",
+      "token_endpoint_auth_signing_alg": "RS256",
+      "client_registration_types": [],
+      "organization_name": "Saippuakauppias",
+      "signed_jwks_uri": "https://paras-saippuakauppias.com/signed-jwks"
+    }
+  }
+}
+```
+
+Encoded and signed JSON Web token:
+```
+eyJhbGciOiJSUzI1NiIsInR5cCI6ImVudGl0eS1zdGF0ZW1lbnQrand0Iiwia2lkIjoiZGwtbGdSY1Q3TGhFa3Fibm9kNlFHQkhsOHZlcWdaZW53ZEIzUlYyT0prWSJ9.eyJpc3MiOiJodHRwczovL3BhcmFzLXNhaXBwdWFrYXVwcGlhcy5jb20iLCJzdWIiOiJodHRwczovL3BhcmFzLXNhaXBwdWFrYXVwcGlhcy5jb20iLCJpYXQiOjE2NjQyOTIwMzEsImV4cCI6MTY2NDM4MjAzMSwiandrcyI6eyJrZXlzIjpbeyJrZXlzIjpbeyJrdHkiOiJSU0EiLCJraWQiOiJkbC1sZ1JjVDdMaEVrcWJub2Q2UUdCSGw4dmVxZ1plbndkQjNSVjJPSmtZIiwidXNlIjoic2lnIiwibiI6InltZUdIR3BmUlVkUWUwVm1QZWkzQVJGQmpscFZySzA2UnBVRjNQSkFUR2tOd0JvWDRqNkxJSnVhY1RubUxPaVRsajg0cXk4Z2dMbW9LWnFhaTZKVnNHUVYtVGhsQ2NSb3VqSENrTnE4ZWViTEJ1MGNyYU5kNjJtLWZYRGZxclo1VEc3ZlRnNkRhNE1pdjFyQzJfaEY1Q3MzSXVrQUp3SG5iTlNPWTBMcTkzamdWNGZBdDVCYnBUdHRXS1Vfd0JMLVBrZWkzWWQxcFBvUzlNbXpMa19KOFpkb1g3MkhfTnpyWGdPMUFmb0lGcHRkRk1yVjEzak1adTVZME5iZ2dxUGxlMUVRYV9FcmRMaHFJT01mcGxsc2x4TFBrWl94cTMtM3B0b2dJRlZPcG5KN0NTTHVyLUYteFVkbDk0LTBrUHUzamtHWkZJQ1JiOWJrZzFBMUJIS2lRdyIsImUiOiJBUUFCIn1dfV19LCJtZXRhZGF0YSI6eyJvcGVuaWRfcmVseWluZ19wYXJ0eSI6eyJyZWRpcmVjdF91cmlzIjpbImh0dHBzOi8vcGFyYXMtc2FpcHB1YWthdXBwaWFzLmNvbS9vYXV0aC9jb2RlIl0sImFwcGxpY2F0aW9uX3R5cGUiOiJ3ZWIiLCJpZF90b2tlbl9zaWduZWRfcmVzcG9uc2VfYWxnIjoiUlMyNTYiLCJpZF90b2tlbl9lbmNyeXB0ZWRfcmVzcG9uc2VfYWxnIjoiUlNBLU9BRVAiLCJpZF90b2tlbl9lbmNyeXB0ZWRfcmVzcG9uc2VfZW5jIjoiQTEyOENCQy1IUzI1NiIsInJlcXVlc3Rfb2JqZWN0X3NpZ25pbmdfYWxnIjoiUlMyNTYiLCJ0b2tlbl9lbmRwb2ludF9hdXRoX21ldGhvZCI6InByaXZhdGVfa2V5X2p3dCIsInRva2VuX2VuZHBvaW50X2F1dGhfc2lnbmluZ19hbGciOiJSUzI1NiIsImNsaWVudF9yZWdpc3RyYXRpb25fdHlwZXMiOltdLCJvcmdhbml6YXRpb25fbmFtZSI6IlNhaXBwdWFrYXVwcGlhcyIsInNpZ25lZF9qd2tzX3VyaSI6Imh0dHBzOi8vcGFyYXMtc2FpcHB1YWthdXBwaWFzLmNvbS9zaWduZWQtandrcyJ9fX0.nYALazUp770QqcUS5UvXSEyGF6k494uQRe97v9B8RkKpGxASpnnZ3Pv0QllSRJuXra2obk2Oiu1xKcaACv3To6Vjpv6QaujtjdALlBlOGoLRvQQD7o8sH-bJHdithUoO1jqsR-Q1csmYeAvikU9TAJl-Fq36iz9reKRbhkYQkCz5cDnRRNT__vJZe8Ja7ACTbTj1Q_vFvxMXNyzL5Wne7-VLEVeKAWEQ0pJyrvWHzNxFVDyo5eJEqEHyRXbCiCRfJWgq4278ZkI899kaz8PKsBV_rScZ72Do841z09Hzj62tV6jwC2aaWhZLEw-9_kOECkLCAtKu0aCn4b3tJsyLPA
+```
+
+Fields of the Entity Statement header:
+- **alg** is the algorithm of the JWKS signing key. RS256.
+- **typ** type of the JWS. Use value `entity-statement+jwt`here.
+- **kid** is the key id of the JWKS signing key.
+
+Mandatory fields of the Entity Statement payload:
+- **iss** The Entity Identifier of the issuer of the statement.
+- **sub** the Entity Identifier of the subject. It SHOULD be the same as the issuer.
+- **iat** The time the statement was issued.
+- **exp** Expiration time on or after which the statement MUST NOT be accepted for processing.
+- **jwks** A JSON Web Key Set (JWKS) representing the public part of the subject Entity's signing keys.
+- **metadata.openid_relying_party.redirect_uris** a list of SP's redirect_uri's
+- **metadata.openid_relying_party.application_type** use value `web` here.
+- **metadata.openid_relying_party.id_token_signed_response_alg** use value `RS256` here
+- **metadata.openid_relying_party.id_token_encrypted_response_alg** use value `RSA-OAEP` here
+- **metadata.openid_relying_party.id_token_encrypted_response_enc** use value `A128CBC-HS256` here
+- **metadata.openid_relying_party.request_object_signing_alg** use value `RS256` here
+- **metadata.openid_relying_party.token_endpoint_auth_method** use value `private_key_jwt` here
+- **metadata.openid_relying_party.token_endpoint_auth_signing_alg** use value `RS256` here
+- **metadata.openid_relying_party.client_registration_types** use empty `[]` here
+- **metadata.openid_relying_party.organization_name** is the name of the SP's organisation
+- **metadata.openid_relying_party.signed_jwks_uri** is the uri of the SP's signed jwks endpoint
+
+
+
+[For more information see the chapter 3.1 of the OpenID Connect Federation - document](https://openid.net/specs/openid-connect-federation-1_0.html#OpenID.Registration).
+
+## 14. JWKS
+
+<span style="color:red">Note that the non-signed ISB JWKS endpoints will be deprecated at the latest on May 2023. Signed JWKS endpoints are already available.</span>
+
+The JWKS endpoints are used to exchange public keys between parties. Both SP and ISB have a JWKS endpoint to publish their own public keys. The JWKS has to be signed by the JWKS signing key. The SP's JWKS endpoint URL has to be registered with OP in the production environment.
+
+In the Sandbox there is no need to implement JWKS endpoint in the SP end as the ISB uses provided keys, but SP must fetch the ISB signing key from the ISB's signed JWKS endpoint. SP needs to verify that the signature of the JWS matches the ISB JWKS signing key.
+
+SP needs to publish two types of public keys in its JWKS endpoint:
 - key for verifying both the signed /oauth/authorize request JWS token and the signed JWS token in client_assertion field in the /oauth/token request.
 - key for identity token encrypting
 
@@ -398,54 +506,85 @@ ISB publishes one type of public key in it's JWKS endpoint:
 
 The ISB's JWKS endpoint is publicly available. Note that around the time of key rotation there are multiple sig-keys (both old and new) published at the same time.
 
-For example in Sandbox: `GET https://isb-test.op.fi/jwks/broker`.
+For example in Sandbox: `GET https://isb-test.op.fi/jwks/broker-signed`.
 
-Example response:
+Example response (Signed JSON web token):
+
+```
+eyJ0eXAiOiAiSldTIiwgImFsZyI6ICJSUzI1NiIsICJraWQiOiAiaGsybDFaUmU0N2tWWDVta0lfeUJoNlR1ZWwtNXlJYk40ZDFVT2d6VTZtRSJ9.eyJrZXlzIjogW3siZSI6ICJBUUFCIiwgImt0eSI6ICJSU0EiLCAibiI6ICJ0a1RQUUQ1MUlaYWx1WDdUMzNWSkZfdF9xQmlKQ1JoRUJGbUw1OU9ZRjdXWWlOdndJaTFRUkxQSFdMUXFWQ1VFdnIzWVZZa1dTUXpEOXJ4M2xRZHNSTVlRdmdkVGs0NXZHTFVJeWplazFTcUVDYjljYnZnRlJydV9uTEF0WldUb2dXZ3BuSE41TV9ya0kwYWVUVmtXV1ZGZ0VValJ0TnZmNURBSnoyVFdmWEVlY0Q5dHluU0hna1RIU29SV3pqQkZNQW1LNjdxWEJtMV83T2VibmNGcFR1UENHUjRWRmQ1VGNQamJaX1AtUWRGMmttS29tbkM0NllXWFVOd2hvdjhIa2R3VkJvckNVWjFuM09fcE5TRWMtdHI1dmZXWUZSSzdfY3FUMDlRWndiVS15SXo0eFVFQjM4dlRHWXhYRGVYRWtnZGJaS3pVZ01vTnFDRmY1b1lxSFEiLCAidXNlIjogInNpZyIsICJraWQiOiAiLVZUZVJERHFLRWF1dnhqaUJCTnNXcXFVbnlBUUFYb19lQTJSZ3BKVXBncyJ9LCB7ImUiOiAiQVFBQiIsICJrdHkiOiAiUlNBIiwgIm4iOiAiMGRET2ZvQmREVWRSQmdXUkJzTDRRSzZUallQR0RiRVN4RFZmQ1ljd1Z0TVJOS1ZkM1RUdFM1UWRJR1IybENUUk0zTllPc0VwY3ZoNXpHaVZrY3UyekZ4ZnlZdzFCVVhCbjczZUhibnNhTFNnZjB2cEZvdGxqWWhsYVF2TXo3Tlh1X01yS0cxdXhRczVTN3R4RE9idjRONElkTzU5TXBZVUNvM0NIVGVhZW5GN2trUkJXYXFvWXpCZnhCQzBrNUM4blVjLWMydjNKTUZkTlVwLXg5UjJhSmxVNkUxOUtmdXJmQjRlUUlqT3VLV3BuQ0xPenZ6bTEwTTdaWVo0aUZXalJfQWpqVGppSGRlOEhKZTNIT1ZsVG1MSmdkUkQ1d3VmcWFzSWNXdmg1eDcwMnZmNVFtZnRvWXpXeFp4eGZVdEo1S3RjeVdpRzNFa2ZLQWpldmdxSkR3IiwgInVzZSI6ICJzaWciLCAia2lkIjogIllyZFFoX1RrQVR0bmlHVjRsTVAyZ01WVTR3MDl1ZWpPaFB1Z0hXVlR4eTQifSwgeyJlIjogIkFRQUIiLCAia3R5IjogIlJTQSIsICJuIjogInVsQS1YR1NVNEZ0V09xVWNfUkoyNlVtLVI1OFotRUEyUGVTRFB1cXA0WG9pQ0JnOGZkTjFvWmhia1R4MHI4RFpGVEZHc1pkZzk3TU9fLUhyNHJrRkgxdHlpUXZyTC1jUGxKWkp3enNnbWQtZlQ1RTlub0hDclVRNno5VFdWUDAzMzB1SmVUVzVLeUw5ZVp5aHFqRlRWYUJLTlU1OXd5U0tiWERFTVBzZ3NBWEhVTC1weUhkaFpLdk5zQzBPZjVwQm1lX2hhelNJTGpmNDlyQlZfN1NZaWZUb1V1U05sSHgxQm91OTZWLTNobGw2UEQzSmVGeWlfVkhSWVU4MkRwekN2RVc1WF80UkJRRDhfbEFjNUpCNUl1WWVTYmFUQzYzdFVwQldsZGdSUGhFWkxaaWtUN0NNYW9sMkVhQ2VEdld4ZC0yTDNmdEFfNGxLZkNpdnowVnBRdyIsICJ1c2UiOiAic2lnIiwgImtpZCI6ICIwY1h2M3NyalphU3J3VFdRVlFBRnlTRmFHOWFyUHEwQ2g4S3VIZVNDaUJzIn1dLCAiaXNzIjogImh0dHBzOi8vaXNiLXRlc3Qub3AuZmkiLCAic3ViIjogImh0dHBzOi8vaXNiLXRlc3Qub3AuZmkiLCAiaWF0IjogMTY2NDIzNzg1NSwgImV4cCI6IDE2NjQyNDE0NTV9.FhMtdh1WQi7o0Xw1bCby6yM4oYVKCL32ZwspeTMf85GXbBVRZHMRo9FtOJc5uNcU4sqxty_5wUETZVa5g3kWiL00dkI4Qn0fZTtdWZa073IT3rkRKwQqZ5gZRtzeY47yUpZ3VCnLXKnOe3FHBBeGZp9pXf97UrpwUQTXHYQWxyLd1YNTFSFravOGVisOMzbmMct9Te91H5-w0-eNUUAHSEGF2C7_HDK4MCWNDki7g39WZYcX3f8RkU9GAC6ItMatBgazLxW_VQaZDRU6QKAyi2_T5dKY9zOh33hzRPG1JPo20mMej5UB5mNvxw5vPImz7BN3cfd9NPV2gH9RFNtrEV69uA8-aPlk6NOX7TSTbiZ3C9HdXC1SCSw-2acZbs13j99XqNONfIdMqrQly_OK9lk8ZMaFd7TiVvDRysfa5aM8Q52UqIWcHBZkzb-sEQvd1_YNn6pfFRFZuRS_C5nRVuFpz2VT1iKn8Qpgt7gpmygv8TYGiAS5QPieduCHN1dqM39UYavrFPHZjjj72ibU_4ymiEcnSXh5XaePNkJLiVfLZiwODVvQ_kPaNQh_nsZybDjfn62YryOiRzrQuiXS6q6A7Dr2o372DI02C-sqycN-MRk6OmjW3Km4c9jTUEeQJFr5Mp-EgEgME37RJ9e4LJxmxps9nrNvenUYYgGUMdk
+```
+
+example response decoded:
 
 ```json
 {
-  "keys":[
+  "keys": [
     {
-      "kty":"RSA",
-      "kid":"-DNF8ccKbmJ-oPVyeoIRaER4x8BI5Sqhvyr-UPk4Do4",
-      "use":"sig",
-      "n":"w1f2iqKttSHq8U93wGQMFyx11NtGMU_XOm8nitErtCRfdTUFlNmNq-4bbhn3Y9nY2yMqhJAJPubLVaTmdmAHy9NY45nrRVAXcIcazaKmcHLlNFNqFqMgrd3SwDE0nMB7SjwC0OwUBXIB97awWrcryZq79vIly9xtha63osbdXBSJI2E7CdOZaUBSo_jQl1Mp4Kn525yHCTqdrwze6u3JMqsKsrDojc_4HcFLQicHgaq5cKy1qSBO_D1P8PsDT7BRuHXqKewzAp4Tg-EYoVv32cEWXMJuCFG5fkImUh_oefY48I-Bp9eGaGV0H3nMF_xng0UZJ03-vAayetforXsmaw",
-      "e":"AQAB"
+      "e": "AQAB",
+      "kty": "RSA",
+      "n": "0dDOfoBdDUdRBgWRBsL4QK6TjYPGDbESxDVfCYcwVtMRNKVd3TTtS5QdIGR2lCTRM3NYOsEpcvh5zGiVkcu2zFxfyYw1BUXBn73eHbnsaLSgf0vpFotljYhlaQvMz7NXu_MrKG1uxQs5S7txDObv4N4IdO59MpYUCo3CHTeaenF7kkRBWaqoYzBfxBC0k5C8nUc-c2v3JMFdNUp-x9R2aJlU6E19KfurfB4eQIjOuKWpnCLOzvzm10M7ZYZ4iFWjR_AjjTjiHde8HJe3HOVlTmLJgdRD5wufqasIcWvh5x702vf5QmftoYzWxZxxfUtJ5KtcyWiG3EkfKAjevgqJDw",
+      "use": "sig",
+      "kid": "YrdQh_TkATtniGV4lMP2gMVU4w09uejOhPugHWVTxy4"
     },
     {
-      "kty":"RSA",
-      "kid":"EBSP_-Zc5OfltLHmNQ-SD7M1WoUM5ZCIcvyCG-peVDc",
-      "use":"sig",
-      "n":"o51QCIqxd-t5LjSuPwEikz9b4UTHaGZp8TGjXXO9i7Zsb1ClzbUGw80AMZtcjWt6Mh25vLVOLarCLkAZySOPFetIA4zCqo8LQj2k3kndCLAe-X5JCo4zVqQArNGSQ1F2kXWMTLrfv-36XA2HKs6ngrk8HdLm3wgShFOZ11Da6l-j8OrgYzRTOWOpwHJSQvT9zTH-ZNGlfdqCoxX9d-CrLNk2loo2-OYGl3bWxhsSLNpxPZDHu0ufOH2kiyp_wvh2yIuhvQksiwos8lBu1ns6msCEjLwSfx9YlJuv9djeV241GFQxp93qZP1vpIOTuIL-BWhog3nJYfur7mWzCQQigZ",
-      "e":"AQAB"
+      "e": "AQAB",
+      "kty": "RSA",
+      "n": "ulA-XGSU4FtWOqUc_RJ26Um-R58Z-EA2PeSDPuqp4XoiCBg8fdN1oZhbkTx0r8DZFTFGsZdg97MO_-Hr4rkFH1tyiQvrL-cPlJZJwzsgmd-fT5E9noHCrUQ6z9TWVP0330uJeTW5KyL9eZyhqjFTVaBKNU59wySKbXDEMPsgsAXHUL-pyHdhZKvNsC0Of5pBme_hazSILjf49rBV_7SYifToUuSNlHx1Bou96V-3hll6PD3JeFyi_VHRYU82DpzCvEW5X_4RBQD8_lAc5JB5IuYeSbaTC63tUpBWldgRPhEZLZikT7CMaol2EaCeDvWxd-2L3ftA_4lKfCivz0VpQw",
+      "use": "sig",
+      "kid": "0cXv3srjZaSrwTWQVQAFySFaG9arPq0Ch8KuHeSCiBs"
     }
-  ]
+  ],
+  "iss": "https://isb-test.op.fi",
+  "sub": "https://isb-test.op.fi",
+  "iat": 1664237855,
+  "exp": 1664241455
 }
 ```
 
-as an example with the provided keys the SP's JWKS endpoint's response looks like this:
+as an example with the provided keys the SP's JWKS endpoint's response looks like this (Signed JSON web token):
+```
+eyJhbGciOiJSUzI1NiIsImtpZCI6IlFVR0h6UzA1ODMxbFlzT0I3X28tTnoyT2RlMmptbm1oNWRKakRBNVE1U00ifQ.eyJrZXlzIjpbeyJrdHkiOiJSU0EiLCJraWQiOiJkbC1sZ1JjVDdMaEVrcWJub2Q2UUdCSGw4dmVxZ1plbndkQjNSVjJPSmtZIiwidXNlIjoic2lnIiwibiI6InltZUdIR3BmUlVkUWUwVm1QZWkzQVJGQmpscFZySzA2UnBVRjNQSkFUR2tOd0JvWDRqNkxJSnVhY1RubUxPaVRsajg0cXk4Z2dMbW9LWnFhaTZKVnNHUVYtVGhsQ2NSb3VqSENrTnE4ZWViTEJ1MGNyYU5kNjJtLWZYRGZxclo1VEc3ZlRnNkRhNE1pdjFyQzJfaEY1Q3MzSXVrQUp3SG5iTlNPWTBMcTkzamdWNGZBdDVCYnBUdHRXS1Vfd0JMLVBrZWkzWWQxcFBvUzlNbXpMa19KOFpkb1g3MkhfTnpyWGdPMUFmb0lGcHRkRk1yVjEzak1adTVZME5iZ2dxUGxlMUVRYV9FcmRMaHFJT01mcGxsc2x4TFBrWl94cTMtM3B0b2dJRlZPcG5KN0NTTHVyLUYteFVkbDk0LTBrUHUzamtHWkZJQ1JiOWJrZzFBMUJIS2lRdyIsImUiOiJBUUFCIn0seyJrdHkiOiJSU0EiLCJraWQiOiJNZllHdU9OV1FaYWJ3d3BoMDJ6SkVxT1FJUE9WMVBoRXNjZ0hjaDBRcUQwIiwidXNlIjoiZW5jIiwibiI6InhSWFdIWVJ2c0ZKNldHU2lMU0RaNUtnUkhnbFNwVEZiWnNyWl9QNlNhOVpLZVN0T2hjUDBNNEZPOU9SZGMxMk1zVFBsRk1JUXktNlRpSlh2WjhweHdjd2VGemFlR1ZCV3RJXzcyd2FBSHU1U1NGbkRwSjlTVlJZQ2RDVTk1T05aQXpOTWFOTkhUUGl2ZzVLZ1lMNDB5WFpxR1NDSUFwQUVwN1JjRTZobTZQWWRYTGVXZl9BVEtOZlZoOVdNcE1nNDlCNUhXSTdKUFZqTjh4Vmk3M3dqTUtnS2NSZXVYOFQxN0h1Rjd3UzBMWndXcjgwUjhzWENldk1LZFVoYWg2WWNGNjU0ZURzcVlDRVZyVkFWT3BkU01zbXdrdW9OMG1uRG11OGx0eUNpLV80NmliZm1nRFdGdl9GSXgtcUF4OTJBRHRCRll5aEFpV0VpYTRhNjdKN2g2USIsImUiOiJBUUFCIn1dLCJpc3MiOiJodHRwczovL3BhcmFzLXNhaXBwdWFrYXVwcGlhcy5jb20iLCJzdWIiOiJodHRwczovL3BhcmFzLXNhaXBwdWFrYXVwcGlhcy5jb20iLCJpYXQiOjE2NjQyOTE3ODUsImV4cCI6MTY2NDM4MTc4NX0.kgRPzD8pqdcikPD1FBznuU95K1fi2PTQbhD3P0yOj8EM-uQpL6ZsVbBRJEmcrhYqu5eVMYStENdhi_rXFoquLhPqO080eS7jnnCkvKi3AWv4F5Q_r0lEjBMR_pYIyL58a3HBmI3M95nwOxJqxHBtX8allbHG9A4eaTK8Tp32rTbiladDGsL0g7cBRt87P8K8UTpdc09Lxl7oY0IAe3YfCLOx1JadX9dq6npS_ggvZvGnxixqovVIocQu1LH_uch3LJg4ivntIWxrpkmbC-6YE-VlESIoefW5a4pmfSzxsqbvVO5XmD-hFIIqc3rGsejuSDeruA5oOt3P1buXd6izrg
+```
+
+response decoded:
+
 ```json
 {
-  "keys":[
+  "keys": [
     {
-      "kty":"RSA",
-      "kid":"dl-lgRcT7LhEkqbnod6QGBHl8veqgZenwdB3RV2OJkY",
-      "use":"sig",
-      "n":"ymeGHGpfRUdQe0VmPei3ARFBjlpVrK06RpUF3PJATGkNwBoX4j6LIJuacTnmLOiTlj84qy8ggLmoKZqai6JVsGQV-ThlCcRoujHCkNq8eebLBu0craNd62m-fXDfqrZ5TG7fTg6Da4Miv1rC2_hF5Cs3IukAJwHnbNSOY0Lq93jgV4fAt5BbpTttWKU_wBL-Pkei3Yd1pPoS9MmzLk_J8ZdoX72H_NzrXgO1AfoIFptdFMrV13jMZu5Y0NbggqPle1EQa_ErdLhqIOMfpllslxLPkZ_xq3-3ptogIFVOpnJ7CSLur-F-xUdl94-0kPu3jkGZFICRb9bkg1A1BHKiQw",
-      "e":"AQAB"
+      "kty": "RSA",
+      "kid": "dl-lgRcT7LhEkqbnod6QGBHl8veqgZenwdB3RV2OJkY",
+      "use": "sig",
+      "n": "ymeGHGpfRUdQe0VmPei3ARFBjlpVrK06RpUF3PJATGkNwBoX4j6LIJuacTnmLOiTlj84qy8ggLmoKZqai6JVsGQV-ThlCcRoujHCkNq8eebLBu0craNd62m-fXDfqrZ5TG7fTg6Da4Miv1rC2_hF5Cs3IukAJwHnbNSOY0Lq93jgV4fAt5BbpTttWKU_wBL-Pkei3Yd1pPoS9MmzLk_J8ZdoX72H_NzrXgO1AfoIFptdFMrV13jMZu5Y0NbggqPle1EQa_ErdLhqIOMfpllslxLPkZ_xq3-3ptogIFVOpnJ7CSLur-F-xUdl94-0kPu3jkGZFICRb9bkg1A1BHKiQw",
+      "e": "AQAB"
     },
     {
-      "kty":"RSA",
-      "kid":"MfYGuONWQZabwwph02zJEqOQIPOV1PhEscgHch0QqD0",
-      "use":"enc",
-      "n":"xRXWHYRvsFJ6WGSiLSDZ5KgRHglSpTFbZsrZ_P6Sa9ZKeStOhcP0M4FO9ORdc12MsTPlFMIQy-6TiJXvZ8pxwcweFzaeGVBWtI_72waAHu5SSFnDpJ9SVRYCdCU95ONZAzNMaNNHTPivg5KgYL40yXZqGSCIApAEp7RcE6hm6PYdXLeWf_ATKNfVh9WMpMg49B5HWI7JPVjN8xVi73wjMKgKcReuX8T17HuF7wS0LZwWr80R8sXCevMKdUhah6YcF654eDsqYCEVrVAVOpdSMsmwkuoN0mnDmu8ltyCi-_46ibfmgDWFv_FIx-qAx92ADtBFYyhAiWEia4a67J7h6Q",
-      "e":"AQAB"
+      "kty": "RSA",
+      "kid": "MfYGuONWQZabwwph02zJEqOQIPOV1PhEscgHch0QqD0",
+      "use": "enc",
+      "n": "xRXWHYRvsFJ6WGSiLSDZ5KgRHglSpTFbZsrZ_P6Sa9ZKeStOhcP0M4FO9ORdc12MsTPlFMIQy-6TiJXvZ8pxwcweFzaeGVBWtI_72waAHu5SSFnDpJ9SVRYCdCU95ONZAzNMaNNHTPivg5KgYL40yXZqGSCIApAEp7RcE6hm6PYdXLeWf_ATKNfVh9WMpMg49B5HWI7JPVjN8xVi73wjMKgKcReuX8T17HuF7wS0LZwWr80R8sXCevMKdUhah6YcF654eDsqYCEVrVAVOpdSMsmwkuoN0mnDmu8ltyCi-_46ibfmgDWFv_FIx-qAx92ADtBFYyhAiWEia4a67J7h6Q",
+      "e": "AQAB"
     }
-  ]
+  ],
+  "iss": "https://paras-saippuakauppias.com", // this contains the URI of the SP
+  "sub": "https://paras-saippuakauppias.com", // this contains the URI of the SP
+  "iat": 1664291785, // the time the keys were created
+  "exp": 1664381785 // Expiration time on or after which the keys MUST NOT be accepted for processing
 }
 ```
 
-Note that the kid's listed in the JWKS endpoint must match to the kid's you specify in the JWS tokens. When using the sandbox environment, be careful to use the kid's mentioned in the above example and not one's you generate yourself. Because the sandbox environment uses predefined keys the ISB does not call your JWKS endpoint. If you wish to test your JWKS endpoint, you can do it by comparing your output against the contents of `sp-sample-jwks.json` in this repository.
+Note that these fields are mandatory:
+- keys
+- iss
+- sub
+
+These fields are optional but highly recommended
+- iat
+- exp
+
+[For more information See the chapter 4.1 of the OpenID Connect Federation - document](https://openid.net/specs/openid-connect-federation-1_0.html#OpenID.Registration).
+
+Note that the kid's listed in the JWKS endpoint must match to the kid's you specify in the JWS tokens. When using the sandbox environment, be careful to use the kid's mentioned in the above example and not one's you generate yourself and make sure to use the given JWKS signing key. Because the sandbox environment uses predefined keys the ISB does not call your JWKS endpoint. If you wish to test your JWKS endpoint, you can do it by comparing your output against the example output above.
 
 About ISB key rotation.
 
@@ -462,7 +601,7 @@ ISB rotates the signing key once a week in production. To help testing, the sign
 
 Caching the keys fetched from the JWKS endpoint is a good idea, but make sure that the refresh mechanism supports the ISB lifecycle, and there is a forced cache refresh in case key is not found.
 
-## 13. Public Sandbox for customer testing
+## 15. Public Sandbox for customer testing
 
 The public Sandbox differs from the production in three major ways.
 
@@ -478,8 +617,10 @@ These id's and keys are used for the Sandbox environment:
 - **Client identifier**: saippuakauppias
 - **Token encryption / decryption key**: See `sandbox-sp-encryption-key.pem`
 - **Signing key**: See `sandbox-sp-signing-key.pem`
+- **SP JWKS signing key**: See `sandbox-sp-entity-signing-key.pem`
+- **public ISB JWKS signing key**: See `sandbox-isb-entity-signing-pubkey.pem`
 
-## 14. Service Provider code examples
+## 16. Service Provider code examples
 
 OP Provides the following Service Provider demo applications:
 
@@ -488,46 +629,80 @@ OP Provides the following Service Provider demo applications:
 - Python-based: https://github.com/op-developer/Identity-Service-Broker-integration-python-example
 - Typescript-based: https://github.com/op-developer/Identity-Service-Broker-integration-typescript-example
 
-## 15. Libraries for Service Provider
+## 17. Libraries for Service Provider
 
 See the examples directory for examples on how to implement a service provider based on various libraries and languages.
 
-## 16. Javascript
+## 18. Javascript
 
 Node-jose can be used to decrypt and verify the identity token. See https://github.com/cisco/node-jose .
 
 Broadly speaking we do not currently advise use of generic OpenID Connect libraries. They often lack support for signed authorization requests and encrypted ID tokens, requiring you to extend them for use with our API. In such situations it is typically easier to implement your service provider with libraries offering slightly lower level of abstraction, as demonstrated by our code examples.
 
-## 17. PHP
+## 19. PHP
 
 oauth2-client makes it simple to integrate your Service Provider application with OP ISB OpenID Connect flow. See https://github.com/thephpleague/oauth2-client .
 
 Jose-php can be used to decrypt and verify the identity token. See https://github.com/nov/jose-php .
 
-## 18. Java
+## 20. Java
 
-Nimbus JOSE+JWT is a Java library for Javascript Object Signing and Encryption (JOSE) and JSON Web Tokens (JWT). See https://mvnrepository.com/artifact/com.nimbusds/nimbus-jose-jwt . This library is used in the Java based integration example. __See section 14__
+Nimbus JOSE+JWT is a Java library for Javascript Object Signing and Encryption (JOSE) and JSON Web Tokens (JWT). See https://mvnrepository.com/artifact/com.nimbusds/nimbus-jose-jwt . This library is used in the Java based integration example. __See section 16__
 
-## 19. Python
+## 21. Python
 
 JWCrypto is an Python library implementation of the Javascript Object Signing and Encryption (JOSE) Web Standards as they are being developed in the JOSE IETF Working Group and related technology. See https://github.com/latchset/jwcrypto
 
-## 20. Extra material
+## 22. Extra material
 - To learn more about the OP Identity Service Broker, see: https://isb-test.op.fi/about?lang=en
 - To learn about the OP Identity Service Broker Privacy Notice, see: https://isb-test.op.fi/privacy-info?lang=en
 - To learn more about OpenID Connect, see the specification: https://openid.net/specs/openid-connect-core-1_0.html
 
-## 21. Support
+## 23. Support
 If you have feature requests or technical problems please submit an issue on Github.
 
 For customer support please contact
 - **corporate customers** +358 100 05151
 - **email** verkkopainikkeet@op.fi
 
-## 22. Sales
+## 24. Sales
 
 Please contact your own branch on contract matters.
 
-## 23. Watching changes
+## 25. M72b changes
+
+The regulation M72b for the strong electronic identification services by Traficom has changed and it came into effect on 1st of June 2022. However the period of transition is one year, which means that these changes have to be taken into use no later than during May 2023. Biggest change is the introduction of the OIDC federation.
+
+These are the changes from Service Provider point of view:
+- introduction of ftn_spname
+- Service Provider needs to create a new key for signing it's JWKS keys
+- Service Provider needs to replace its current JWKS endpoint with a signed JWKS endpoint
+- Service Provider needs to create an Entity Statement containing the public signing key and exchange it with OP.
+- ISB is also replacing its JWKS endpoint with a signed one. Service Provider needs to start using the ISB's signed JWKS endpoint and to verify the signature of the ISB OP JWKS.
+
+## Introduction of ftn_spname
+
+The new optional **ftn_spname** parameter in the /oauth/authorize request makes it possible for the Service Provider to specify a human readable name of the Service Provider to be displayed during the identification process. Typically it should be localised to the same language as indicated by the **ui_locales** parameter. This is how the **ftn_spname** with value `Saippuakauppias`is displayed during the identification.
+
+<img src="spname.png" alt="ftn_spname displayed" width="400"/>
+
+<span style="color:red">Note The **ftn_spname** parameter values have to be agreed with OP before succesful usage.</span> ISB will only approve a value, which has been agreed upon. In case SP uses a value, which has not been agreed upon or does not use this optional parameter the ISB is using the legal name of the Service Provider company.
+
+
+
+## Service Provider needs to create a new key for signing it's JWKS keys
+
+Service Provider needs to create a new RSA key for signing its JWKS and the Entity Statement. This key is typically a long-lived key. The private part of this key shall be kept as secret and stored securely.
+
+## Service Providers signed jwks
+
+So far both the OP ISB and the SP have published its public keys in the JWKS endpoint. This continues as such in the future, but the payload will be a signed JSON web token instead of json. See the modified chapter 14.
+
+## Service Provider Entity Statement
+
+Service Provider needs to create an Entity Statement and exchange it with the OP. Easiest way is to implement the Entity Statement creation programmatically like in the integration examples. This will also minimize human errors e.g. when rotating the signing key. Entity Statement is described in the chapter 13.
+
+
+## 26. Watching changes
 
 The API might change in the future. Please enable watch-functionality as [instructed here](https://help.github.com/en/articles/watching-and-unwatching-repositories) to get notified when the API changes.
