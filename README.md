@@ -485,7 +485,18 @@ Mandatory fields of the Entity Statement payload:
 - **metadata.openid_relying_party.organization_name** is the name of the SP's organisation
 - **metadata.openid_relying_party.signed_jwks_uri** is the uri of the SP's signed jwks endpoint
 
+<span style="color:red">Note that it is possible for the SP to use wildcards in each of the redirect_uri's. This is helpful if there are a large number of those Urls. </span> As an example an SP has the following redirect_uri's:
 
+- https://paras-saippuakauppias.com/service1
+- https://paras-saippuakauppias.com/service1/en
+- https://paras-saippuakauppias.com/service1/sv
+- https://paras-saippuakauppias.com/service2
+
+Instead of listing all those four redirect_uri's, you could just list one:
+
+- https://paras-saippuakauppias.com/service*
+
+ISB is then approving all the redirect_uri's matching the text before the wildcard * when validating the parameter in the /oauth/authorize request.
 
 [For more information see the chapter 3.1 of the OpenID Connect Federation - document](https://openid.net/specs/openid-connect-federation-1_0.html#OpenID.Registration).
 
@@ -603,13 +614,17 @@ Caching the keys fetched from the JWKS endpoint is a good idea, but make sure th
 
 ## 15. Public Sandbox for customer testing
 
-The public Sandbox differs from the production in three major ways.
+The public Sandbox differs from the production in these major ways.
 
 - The Sandbox environment provides test data instead of real personal information.
 - To use the Sandbox environment you need to use the separate API endpoints described above.
-- Common shared credentials and client id are used for the Sandbox environment. Because the sandbox does not require registration all developers need to use the provided keys (instead of their own keys).
-- SP do not need to implement JWKS-endpoint as the ISB uses provided keys.
+- Common shared credentials and client id are used for the Sandbox environment. Because the sandbox does not require registration all developers need to use the provided keys (instead of their own keys). Production client id does not work in Sandbox.
+- SP do not need to implement JWKS-endpoint in Sandbox as the ISB uses provided keys.
 - redirect_uri does not have to agreed with OP in Sandbox.
+- ftn_spname is whitelisted in the Sandbox with the following three values. Only these are approved and pre-registered with the OP ISB:
+  - "Saippuaa kansalle"
+  - "Soap for the people"
+  - "tvål för folket"
 - the /api/embedded-ui/{client_id} endpoint always returns disturbanceInfo field in the returned Json data. It either contains real disturbance information of the Sandbox or contains a placeholder text: "This is a placeholder for disturbance information to help implementation". This is to help implementation of the UI.
 
 These id's and keys are used for the Sandbox environment:
@@ -686,7 +701,7 @@ The new optional **ftn_spname** parameter in the /oauth/authorize request makes 
 
 <img src="spname.png" alt="ftn_spname displayed" width="400"/>
 
-<span style="color:red">Note The **ftn_spname** parameter values have to be agreed with OP before succesful usage.</span> ISB will only approve a value, which has been agreed upon. In case SP uses a value, which has not been agreed upon or does not use this optional parameter the ISB is using the legal name of the Service Provider company.
+<span style="color:red">Note that the **ftn_spname** parameter values have to be agreed with OP before succesful usage.</span> ISB will only approve a value, which has been agreed upon. In case SP uses a value, which has not been agreed upon or does not use this optional parameter at all the ISB is using the legal name of the Service Provider company.
 
 
 
