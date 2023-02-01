@@ -186,7 +186,7 @@ The following optional parameters (JWS token claims) may be used:
 - **exp** the expiration time of the JWS token. This is seconds since UNIX epoch (UTC). Suggested time is 600 seconds in the future. If given, ISB checks that the JWS has not expired. If it has expired the ISB will respond with an error.
 - **jti** JWT ID. A unique identifier for JWS tokens, which can be used to prevent reuse of the token. These identifiers must only be used once. If given, ISB checks if this `jti` has already been used and if it has ISB will respond with an error.
 - **iss** Issuer. This must contain the client_id. If `jti` is given, this must be given as well.
-- **ftn_spname**  Human readable name of the Service Provider the user is authenticating to.
+- **ftn_spname**  Human readable name of the Service Provider the user is authenticating to. The name should identify the service in such a way that the user understands which service they are identifying to. It could for example be either the legal name of the organization or the trade name the user knows the service as. Because the ftp_spname parameter is processed by multiple different identity providers and may be shown on different user interfaces, including mobile apps, we recommend trying to keep the name reasonably short and avoiding unusual characters to make sure the name is displayed consistently.
 
 The JWS token must be signed with the RS256 algorithm with SP's signing key.
 
@@ -496,6 +496,8 @@ ISB is then approving all the redirect_uri's matching the text before the wildca
 
 [For more information see the chapter 3.1 of the OpenID Connect Federation - document](https://openid.net/specs/openid-connect-federation-1_0.html#OpenID.Registration).
 
+OP provides an easy-to-use online validator tool for the SP's Entity Statement JWS. The validity of the JWKS JWS can be checked as well and it is highly recommened to check them both. Validator checks that all the needed fields exists with meaningful values and it checks the signature in both the Entity Statement JWS and the JWKS JWS. Link to the validator: https://isb-test.op.fi/entity-statement-tester .
+
 ## 14. JWKS
 
 <span style="color:red">Note that the non-signed ISB JWKS endpoints will be deprecated at the latest on May 2023. Signed JWKS endpoints are already available.</span>
@@ -701,7 +703,7 @@ These are the changes from Service Provider point of view:
 
 ## Introduction of ftn_spname
 
-The new optional **ftn_spname** parameter in the /oauth/authorize request makes it possible for the Service Provider to specify a human readable name of the Service Provider to be displayed during the identification process. Typically it should be localised to the same language as indicated by the **ui_locales** parameter. This is how the **ftn_spname** with value `Saippuakauppias`is displayed during the identification.
+The new optional **ftn_spname** parameter in the /oauth/authorize request makes it possible for the Service Provider to specify a human readable name of the Service Provider to be displayed during the identification process. Typically it should be localised to the same language as indicated by the **ui_locales** parameter. See more information about the **ftn_spname** parameter in the chapter 7. This is how the **ftn_spname** with value `Saippuakauppias`is displayed during the identification.
 
 <img src="spname.png" alt="ftn_spname displayed" width="400"/>
 
@@ -713,7 +715,7 @@ The new optional **ftn_spname** parameter in the /oauth/authorize request makes 
 
 Service Provider needs to create a new RSA key for signing its JWKS and the Entity Statement. This key is typically a long-lived key. The private part of this key shall be kept as secret and stored securely.
 
-## Service Providers signed jwks
+## Service Providers signed JWKS
 
 So far both the OP ISB and the SP have published its public keys in the JWKS endpoint. This continues as such in the future, but the payload will be a signed JSON web token instead of json. See the modified chapter 14.
 
@@ -721,6 +723,7 @@ So far both the OP ISB and the SP have published its public keys in the JWKS end
 
 Service Provider needs to create an Entity Statement and exchange it with the OP. Easiest way is to implement the Entity Statement creation programmatically like in the integration examples. This will also minimize human errors e.g. when rotating the signing key. Entity Statement is described in the chapter 13.
 
+It is possible to check the validity of the Service Provider's Entity Statement as well as signed JWKS online. See chapter 13 for more details.
 
 ## 26. Watching changes
 
