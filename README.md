@@ -1,6 +1,6 @@
 # Service Provider API for OP Identity Service Broker
 
-2023-01-30
+2023-02-21
 
 OP Identification Service Broker allows Service Providers to implement strong electronic identification (Finnish bank credentials, Mobile ID) easily to websites and mobile apps via single API.
 
@@ -396,7 +396,7 @@ We provide an optional OpenID Discovery metadata endpoint. It may be used to con
 
 We provide an optional OpenId federation metadata endpoint containing the Entity Statement of the ISB. The metadata provided by this endpoint should not be automatically relied on by the SP, but should be manually reviewed. The endpoint for production use is `https://isb.op.fi/.well-known/openid-federation`. For testing please use the sandbox endpoint `https://isb-test.op.fi/.well-known/openid-federation`.
 
-The payload is a base64 encoded and signed JSON web token and contains e.g. the URI of the signed JWKS endpoint. The key used for signing is the JWKS signing key.
+The payload is a base64 encoded and signed JSON web token and contains e.g. the URI of the signed JWKS endpoint. The key used for signing is the JWKS signing key. Content-Type of the HTTP response is `application/entity-statement+jwt`.
 
 OP will inform the Service Providers when the metadata is updated.
 
@@ -460,7 +460,7 @@ eyJhbGciOiJSUzI1NiIsInR5cCI6ImVudGl0eS1zdGF0ZW1lbnQrand0Iiwia2lkIjoiUVVHSHpTMDU4
 
 Fields of the Entity Statement header:
 - **alg** is the algorithm of the JWKS signing key. RS256.
-- **typ** type of the JWS. Use value `entity-statement+jwt`here.
+- **typ** type of the JWS. Use value `entity-statement+jwt` here.
 - **kid** is the key id of the JWKS signing key.
 
 Mandatory fields of the Entity Statement payload:
@@ -513,7 +513,7 @@ SP needs to publish two types of public keys in its JWKS endpoint:
 ISB publishes one type of public key in it's JWKS endpoint:
 - key for verifying the signed identity token
 
-The ISB's JWKS endpoint is publicly available. Note that around the time of key rotation there are multiple sig-keys (both old and new) published at the same time.
+The ISB's JWKS endpoint is publicly available. Note that around the time of key rotation there are multiple sig-keys (both old and new) published at the same time. Content-Type of the HTTP response is `application/jwk-set+jwt`.
 
 For example in Sandbox: `GET https://isb-test.op.fi/jwks/broker-signed`.
 
@@ -598,6 +598,8 @@ Note that these fields are mandatory:
 These fields are optional but highly recommended
 - iat
 - exp
+
+Content-Type of the HTTP response should be `application/jwk-set+jwt`.
 
 [For more information See the chapter 4.1 of the OpenID Connect Federation - document](https://openid.net/specs/openid-connect-federation-1_0.html#OpenID.Registration).
 
@@ -703,7 +705,7 @@ These are the changes from Service Provider point of view:
 
 ## Introduction of ftn_spname
 
-The new optional **ftn_spname** parameter in the /oauth/authorize request makes it possible for the Service Provider to specify a human readable name of the Service Provider to be displayed during the identification process. Typically it should be localised to the same language as indicated by the **ui_locales** parameter. See more information about the **ftn_spname** parameter in the chapter 7. This is how the **ftn_spname** with value `Saippuakauppias`is displayed during the identification.
+The new optional **ftn_spname** parameter in the /oauth/authorize request makes it possible for the Service Provider to specify a human readable name of the Service Provider to be displayed during the identification process. Typically it should be localised to the same language as indicated by the **ui_locales** parameter. See more information about the **ftn_spname** parameter in the chapter 7. This is how the **ftn_spname** with value `Saippuakauppias` is displayed during the identification.
 
 <img src="spname.png" alt="ftn_spname displayed" width="400"/>
 
