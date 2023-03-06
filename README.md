@@ -1,6 +1,6 @@
 # Service Provider API for OP Identity Service Broker
 
-2023-02-21
+2023-03-06
 
 OP Identification Service Broker allows Service Providers to implement strong electronic identification (Finnish bank credentials, Mobile ID) easily to websites and mobile apps via single API.
 
@@ -394,11 +394,13 @@ We provide an optional OpenID Discovery metadata endpoint. It may be used to con
 
 ## 12. GET /.well-known/openid-federation
 
-We provide an optional OpenId federation metadata endpoint containing the Entity Statement of the ISB. The metadata provided by this endpoint should not be automatically relied on by the SP, but should be manually reviewed. The endpoint for production use is `https://isb.op.fi/.well-known/openid-federation`. For testing please use the sandbox endpoint `https://isb-test.op.fi/.well-known/openid-federation`.
+We provide an optional OpenId federation metadata endpoint containing the Entity Statement of the ISB. The metadata provided by this endpoint should not be automatically relied on by the SP, but should be manually reviewed. OP can also deliver the Entity Statement via email if required.
 
-The payload is a base64 encoded and signed JSON web token and contains e.g. the URI of the signed JWKS endpoint. The key used for signing is the JWKS signing key. Content-Type of the HTTP response is `application/entity-statement+jwt`.
+The endpoint for production use is `https://isb.op.fi/.well-known/openid-federation`. For testing please use the sandbox endpoint `https://isb-test.op.fi/.well-known/openid-federation`.
 
-OP will inform the Service Providers when the metadata is updated.
+The payload is a base64 encoded and signed JSON web token and contains e.g. the URI of the signed JWKS endpoint. The key used for signing is the JWKS signing key. Instead of calling the ISB's OpenId federation metadata endpoint programmatically the SP should store this JWKS signing key or keys and use those when validating the OIDC keys from ISB's signed-jwks endpoint. Content-Type of the HTTP response is `application/entity-statement+jwt`.
+
+The JWKS signing key is a long-lived key. OP will inform the Service Providers when the metadata is updated. OP does not change the JWKS signing key without informing about the change first separately.
 
 ## 13. The Entity Statement of Service Provider
 
@@ -468,7 +470,7 @@ Mandatory fields of the Entity Statement payload:
 - **sub** the Entity Identifier of the subject. It SHOULD be the same as the issuer.
 - **iat** The time the statement was issued.
 - **exp** Expiration time on or after which the statement MUST NOT be accepted for processing.
-- **jwks** A JSON Web Key Set (JWKS) representing the public part of the subject Entity's signing keys.
+- **jwks** A JSON Web Key Set (JWKS) representing the public part of the subject Entity's JWKS signing keys.
 - **metadata.openid_relying_party.redirect_uris** a list of SP's redirect_uri's
 - **metadata.openid_relying_party.application_type** use value `web` here.
 - **metadata.openid_relying_party.id_token_signed_response_alg** use value `RS256` here
