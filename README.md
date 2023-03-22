@@ -1,6 +1,6 @@
 # Service Provider API for OP Identity Service Broker
 
-2023-03-06
+2023-03-22
 
 OP Identification Service Broker allows Service Providers to implement strong electronic identification (Finnish bank credentials, Mobile ID) easily to websites and mobile apps via single API.
 
@@ -399,6 +399,8 @@ We provide an optional OpenId federation metadata endpoint containing the Entity
 The endpoint for production use is `https://isb.op.fi/.well-known/openid-federation`. For testing please use the sandbox endpoint `https://isb-test.op.fi/.well-known/openid-federation`.
 
 The payload is a base64 encoded and signed JSON web token and contains e.g. the URI of the signed JWKS endpoint. The key used for signing is the JWKS signing key. Instead of calling the ISB's OpenId federation metadata endpoint programmatically the SP should store this JWKS signing key or keys and use those when validating the OIDC keys from ISB's signed-jwks endpoint. Content-Type of the HTTP response is `application/entity-statement+jwt`.
+
+Data intended for Service Providers within the Entity Statement can be found from the metadata.openid_provider attribute object. For example ISB's signed-jwks endpoint for Service Providers can be found from the metadata.openid_provider.signed_jwks_uri attribute.
 
 The JWKS signing key is a long-lived key. OP will inform the Service Providers when the metadata is updated. OP does not change the JWKS signing key without informing about the change first separately.
 
