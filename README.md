@@ -300,7 +300,7 @@ Parameter explanations:
 
 The identity token is a JWT token that contains identity attributes about the user, for example name, date of birth or personal identity code. The token is signed by OP's RSA signing key. The signed token is embedded and encrypted into an JWE token using the service provider's public encryption key.
 
-To obtain the user attributes from the identity token you need to first decrypt the JWE token (`id_token`) received from the '/oauth/token' API. Decryption is done using the Service Provider private RSA encryption key. The decrypted JWS token is signed using OP's RSA certificate to prevent tampering. Service Provider needs to verify that the signature is valid using the JWT library of your choice and the OP's public RSA signing key. The payload of the JWS token embedded in the JWE token contains user information.
+To obtain the user attributes from the identity token you need to first decrypt the JWE token (`id_token`) received from the '/oauth/token' API. Decryption is done using the Service Provider private RSA encryption key. The decrypted JWS token is signed using OP's RSA certificate to prevent tampering. Service Provider needs to verify that the signature is valid using the JWT library of your choice and OP's public RSA signing key. The payload of the JWS token embedded in the JWE token contains user information.
 
 The information received depends on the scope of identification request and on what attributes are available. Do note that not all sources of information have given name and family name available as separate attributes. The following attributes may be available currently:
 
@@ -400,7 +400,7 @@ The endpoint for production use is `https://isb.op.fi/.well-known/openid-federat
 
 The payload is a base64 encoded and signed JSON web token and contains e.g. the URI of the signed JWKS endpoint. The key used for signing is the ISB's Entity key. Note that there can be multiple Entity Keys so when veritying the signing of the Entity Statement or the signed JWKS JWS the correct key has to be used. Instead of calling the ISB's OpenId federation metadata endpoint programmatically the SP should store this Entity key or keys and use those when validating the OIDC keys from ISB's signed JWKS endpoint. Content-Type of the HTTP response is `application/entity-statement+jwt`.
 
-Recommended way it store the Entity Statement JWS as such into the Service Provider's application and when needed the JWS is parsed by the SP application to get the ISB's Entity key(s) and ISB's different uri's.
+Recommended way is to store the Entity Statement JWS as such into the Service Provider's application and when needed the JWS is parsed by the SP application to get the ISB's Entity key(s) and ISB's different uri's.
 
 Data intended for Service Providers within the Entity Statement can be found from the metadata.openid_provider attribute object. For example ISB's signed JWKS endpoint for Service Providers can be found from the metadata.openid_provider.signed_jwks_uri attribute.
 
@@ -470,7 +470,7 @@ Fields of the Entity Statement header:
 - **kid** is the key id of the Entity key.
 
 Mandatory fields of the Entity Statement payload:
-- **iss** The Entity Identifier of the issuer of the statement. This is SP application's base uri
+- **iss** The Entity Identifier of the issuer of the statement. This is the SP application's base uri
 - **sub** the Entity Identifier of the subject. It SHOULD be the same as the issuer.
 - **iat** The time the statement was issued.
 - **exp** Expiration time on or after which the statement MUST NOT be accepted for processing.
@@ -498,15 +498,15 @@ Instead of listing all those four redirect_uri's, you could just list one:
 
 - https://paras-saippuakauppias.com/service*
 
-ISB is approving all the redirect_uri's matching the text before the wildcard * when validating the parameter in the /oauth/authorize request.
+ISB approves all the redirect_uri's matching the text before the wildcard * when validating the parameter in the /oauth/authorize request.
 
-<span style="color:red">Note! Without a proper whitelisting of a redirect_uri used by the SP application, the identification flow will fail.</span>
+<span style="color:red">Note! Without proper whitelisting of a redirect_uri used by the SP application, the identification flow will fail.</span>
 
 [For more information see the chapter 3.1 of the OpenID Connect Federation - document](https://openid.net/specs/openid-connect-federation-1_0.html#OpenID.Registration).
 
 OP provides an easy-to-use online validator tool for the SP's Entity Statement JWS. The validity of the JWKS JWS can be checked as well and it is highly recommened to check them both. Validator checks that all the needed fields exists with meaningful values and it checks the signature in both the Entity Statement JWS and the signed JWKS JWS. Link to the validator: https://isb-test.op.fi/entity-statement-tester .
 
-## 14. signed JWKS
+## 14. Signed JWKS
 
 <span style="color:red">Note that the non-signed JWKS endpoints are deprecated.</span>
 
@@ -630,16 +630,16 @@ Caching the keys fetched from the signed JWKS endpoint is a good idea, but make 
 
 About SP key rotation.
 
-SP should rotate it's OIDC signing and encryption keys regularly. The rotation of the signing key should follow same principle as described above for the ISB.
+SP should rotate its OIDC signing and encryption keys regularly. The rotation of the signing key should follow same principle as described above for the ISB.
 
 The SP's encyption key rotation should follow this principle
 
 ![encyption key rotation](./encryption_key_rotation.png?raw=true)
 
 - CREATE, new key is created
-- WARM-UP, key is not published and not in use
+- WARM-UP, key is not published but it is deployed side-by-side with the old key so that it can be used for decrypting immediately after it is published
 - NORMAL USE, key is in use
-- TAIL, key is still in use but not published
+- TAIL, key is still available for decrypting in case some more tokens encrypted for it arrive, but it is no longer published
 - DELETION, key is deleted
 
 blue colour indicates key being published in the SP's signed JWKS endpoint.
@@ -748,7 +748,7 @@ Service Provider needs to create a new RSA key (Entity key) for signing its JWKS
 
 ## Service Providers signed JWKS
 
-So far both the OP ISB and the SP have published its public keys in the non-signed JWKS endpoint. The publishing of the key continues as such in the future, but the payload will be a signed JSON web token instead of json. I.e. non-signed JWKS endpoint needs to be replaced by signed JWKS endpoint. See the modified chapter 14.
+Previously both the OP ISB and the SP have published its public keys in the non-signed JWKS endpoint. The publishing of the key continues as such in the future, but the payload will be a signed JSON web token instead of json. I.e. non-signed JWKS endpoint needs to be replaced by signed JWKS endpoint. See the modified chapter 14.
 
 ## Service Provider Entity Statement
 
