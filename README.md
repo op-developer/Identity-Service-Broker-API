@@ -626,7 +626,7 @@ ISB rotates the signing key once a week in production. To help testing, the sign
 - TAIL, key is not published anymore in the signed JWKS, key is not in use
 - DELETION, key is deleted
 
-Caching the keys fetched from the signed JWKS endpoint is a good idea, but make sure that the refresh mechanism supports the ISB lifecycle, and there is a forced cache refresh in case key is not found in the cache.
+Caching the keys fetched from the signed JWKS endpoint is a good idea, but make sure that the refresh mechanism supports the ISB lifecycle, and there is a forced cache refresh in case a key is not found in the cache.
 
 About SP key rotation.
 
