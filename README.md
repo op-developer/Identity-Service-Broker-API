@@ -1,6 +1,6 @@
 # Service Provider API for OP Identity Service Broker
 
-2023-03-22
+2023-06-16
 
 OP Identification Service Broker allows Service Providers to implement strong electronic identification (Finnish bank credentials, Mobile ID) easily to websites and mobile apps via single API.
 
@@ -24,7 +24,7 @@ Table of contents:
 11. GET /.well-known/openid-configuration
 12. GET /.well-known/openid-federation
 13. The Entity Statement of Service Provider
-14. JWKS
+14. Signed JWKS
 15. Public Sandbox for customer testing
 16. Service Provider code examples
 17. Libraries for Service Provider
@@ -46,8 +46,8 @@ Table of contents:
 - **Identity Provider (IdP)** is a provider of identification, i.e. a Bank or mobile ID.
 - **Identity Service Broker UI** is a list of Identity Providers shown on the UI. There are two options for displaying the UI. Service Provider can redirect the user to the hosted UI in the Identity Service Broker or embed the UI into its own UI.
 - **OIDC** or OpenID Connect is a standard easy to use protocol for identifying and authenticating users.
-- **JWT** or JSON Web Token is a standard for wrapping attributes into a token. JWS is a signed and JWE an encrypted JWT token.
-- **JWKS** JSON Web Key Set is a standard way to exchange public keys between SP and ISB.
+- **JWT** or JSON Web Token is a standard for wrapping attributes into a token. **JWS** is a signed and **JWE** an encrypted JWT token.
+- **Signed JWKS** way to exchange public keys between SP and ISB in a JWS.
 
 ## 2. Prerequisites
 
@@ -75,22 +75,22 @@ To identify users using the Identity Service Broker and the OIDC API for Service
 
 * RSA key pair to decrypt identity token
 
-  OP will encrypt the identity token identifying the user with your public key and you will have to decrypt it with your private key. Keys are generated the same way as signing keys. Both encryption and signing public keys must be published in the SP's JKWS endpoint. Keep the private portions of these keypairs private.
+  OP will encrypt the identity token identifying the user with your public key and you will have to decrypt it with your private key. Keys are generated the same way as signing keys. Both encryption and signing public keys must be published in the SP's signed JWKS endpoint. Keep the private portions of these keypairs private.
 
-* RSA key pair to sign Service Provider JWKS and the Entity Statement
+* RSA key pair to sign Service Provider signed JWKS and the Entity Statement (Entity key)
 
-  Signing is used for verifying that the JWKS originate from the SP or from the ISB. It is used to protect against hijacking the service.
+  Signing is used for verifying that the signed JWKS originate from the SP or from the ISB. It is used to protect against hijacking the service. This Entity key is a long lived and it is published in the Entity Statement. Keep the private portion of this keypair private.
 
 To generate a 2048 bit RSA key run the command `openssl genrsa -out private.pem 2048` (you could replace the filename private.pem with one of your own choosing).
 
-* OP JWKS endpoint
+* OP signed JWKS endpoint
 
-  Identity tokens are signed by OP to protect their content. You must verify the signature against OP's public key which can be fetched from the OP JWKS endpoint `https://isb.op.fi/jwks/broker`. For testing please use the sandbox endpoint `https://isb-test.op.fi/jwks/broker`. Note that the keys are rolled over at times. The endpoint may contain several valid keys. You may safely cache keys for at most one day. When fetching keys from endpoint you must verify the TLS certificate to ensure that the keys are genuine.
+  Identity tokens are signed by OP to protect their content. You must verify the signature against OP's public key which can be fetched from the OP signed JWKS endpoint `https://isb.op.fi/jwks/broker-signed`. For testing please use the sandbox endpoint `https://isb-test.op.fi/jwks/broker-signed`. Note that the keys are rolled over at times. The endpoint may contain several valid keys. You may safely cache keys for at most one day. When fetching keys from endpoint you must verify the TLS certificate to ensure that the keys are genuine. Also the signing of the JWS containing these keys must be verified against the ISB's Entity Key.
 
 ## 3. Security concerns
 
 - Private RSA keys must be protected and not revealed to users.
-- The keys should be rotated every now and then. When depracating a key you should remove it from your JWKS endpoint at least one day before deactivating it to prevent disruptions to service. We may cache your public keys for up to one day on the ISB.
+- The keys should be rotated every now and then. When depracating a key you should remove it from your signed JWKS endpoint at least one day before deactivating it to prevent disruptions to service. We may cache your public keys for up to one day on the ISB.
 - Keys must not be sent to the user's browser. I.e. processing the identification should be done server side, not in browser side Javascript.
 
 ## 4. Flow with hosted Identity Service Broker UI
@@ -298,9 +298,9 @@ Parameter explanations:
 
 ## 9. Identity token
 
-The identity token is a JWT token that contains identity attributes about the user, for example name, date of birth or personal identity code. The token is signed by OP's RSA key. The signed token is embedded and encrypted into an JWE token using the service provider's public key.
+The identity token is a JWT token that contains identity attributes about the user, for example name, date of birth or personal identity code. The token is signed by OP's RSA signing key. The signed token is embedded and encrypted into an JWE token using the service provider's public encryption key.
 
-To obtain the user attributes from the identity token you need to first decrypt the JWE token (`id_token`) received from the '/oauth/token' API. Decryption is done using the Service Provider private RSA key. The decrypted JWS token is signed using OP's RSA certificate to prevent tampering. Service Provider needs to verify that the signature is valid using the JWT library of your choice and the OP's public RSA key. The payload of the JWS token embedded in the JWE token contains user information.
+To obtain the user attributes from the identity token you need to first decrypt the JWE token (`id_token`) received from the '/oauth/token' API. Decryption is done using the Service Provider private RSA encryption key. The decrypted JWS token is signed using OP's RSA certificate to prevent tampering. Service Provider needs to verify that the signature is valid using the JWT library of your choice and OP's public RSA signing key. The payload of the JWS token embedded in the JWE token contains user information.
 
 The information received depends on the scope of identification request and on what attributes are available. Do note that not all sources of information have given name and family name available as separate attributes. The following attributes may be available currently:
 
@@ -394,19 +394,21 @@ We provide an optional OpenID Discovery metadata endpoint. It may be used to con
 
 ## 12. GET /.well-known/openid-federation
 
-We provide an optional OpenId federation metadata endpoint containing the Entity Statement of the ISB. The metadata provided by this endpoint should not be automatically relied on by the SP, but should be manually reviewed. OP can also deliver the Entity Statement via email if required.
+We provide an optional OpenId federation metadata endpoint containing the Entity Statement of the ISB. The metadata provided by this endpoint should not be automatically relied on by the SP, but should be manually reviewed. I.e. programmatical requests for this endpoint are not allowed and are monitored. OP can also deliver the Entity Statement via email if required.
 
 The endpoint for production use is `https://isb.op.fi/.well-known/openid-federation`. For testing please use the sandbox endpoint `https://isb-test.op.fi/.well-known/openid-federation`.
 
-The payload is a base64 encoded and signed JSON web token and contains e.g. the URI of the signed JWKS endpoint. The key used for signing is the JWKS signing key. Instead of calling the ISB's OpenId federation metadata endpoint programmatically the SP should store this JWKS signing key or keys and use those when validating the OIDC keys from ISB's signed-jwks endpoint. Content-Type of the HTTP response is `application/entity-statement+jwt`.
+The payload is a base64 encoded and signed JSON web token and contains e.g. the URI of the signed JWKS endpoint. The key used for signing is the ISB's Entity key. Note that there can be multiple Entity Keys so when veritying the signing of the Entity Statement or the signed JWKS JWS the correct key has to be used. Instead of calling the ISB's OpenId federation metadata endpoint programmatically the SP should store this Entity key or keys and use those when validating the OIDC keys from ISB's signed JWKS endpoint. Content-Type of the HTTP response is `application/entity-statement+jwt`.
 
-Data intended for Service Providers within the Entity Statement can be found from the metadata.openid_provider attribute object. For example ISB's signed-jwks endpoint for Service Providers can be found from the metadata.openid_provider.signed_jwks_uri attribute.
+Recommended way is to store the Entity Statement JWS as such into the Service Provider's application and when needed the JWS is parsed by the SP application to get the ISB's Entity key(s) and ISB's different uri's.
 
-The JWKS signing key is a long-lived key. OP will inform the Service Providers when the metadata is updated. OP does not change the JWKS signing key without informing about the change first separately.
+Data intended for Service Providers within the Entity Statement can be found from the metadata.openid_provider attribute object. For example ISB's signed JWKS endpoint for Service Providers can be found from the metadata.openid_provider.signed_jwks_uri attribute.
+
+The Entity key is a long-lived key. OP will inform the Service Providers when the metadata is updated. OP does not change the Entity key or other relevant information within the Entity Statement without informing about the change separately beforehand.
 
 ## 13. The Entity Statement of Service Provider
 
-SP needs to provide metadata of its service to the ISB in the integration phase and when the SP is rotating its long-lived JWKS signing key. This metadata is not exchanged programmatically but SP will provide it to the OP as instructed separately by OP. The metadata is a signed JSON web token.
+SP needs to provide metadata of its service to the ISB in the integration phase and when the SP is rotating its long-lived Entity key. This metadata is not exchanged programmatically but SP will provide it to the OP as instructed separately by OP. The metadata is a signed JSON web token.
 
 An example Entity Statement header and payload of the JSON web token:
 
@@ -465,14 +467,14 @@ eyJhbGciOiJSUzI1NiIsInR5cCI6ImVudGl0eS1zdGF0ZW1lbnQrand0Iiwia2lkIjoiUVVHSHpTMDU4
 Fields of the Entity Statement header:
 - **alg** is the algorithm of the JWKS signing key. RS256.
 - **typ** type of the JWS. Use value `entity-statement+jwt` here.
-- **kid** is the key id of the JWKS signing key.
+- **kid** is the key id of the Entity key.
 
 Mandatory fields of the Entity Statement payload:
-- **iss** The Entity Identifier of the issuer of the statement.
+- **iss** The Entity Identifier of the issuer of the statement. This is the SP application's base uri
 - **sub** the Entity Identifier of the subject. It SHOULD be the same as the issuer.
 - **iat** The time the statement was issued.
 - **exp** Expiration time on or after which the statement MUST NOT be accepted for processing.
-- **jwks** A JSON Web Key Set (JWKS) representing the public part of the subject Entity's JWKS signing keys.
+- **jwks** A JSON Web Key Set (JWKS) representing the public part of the subject Entity's Entity keys.
 - **metadata.openid_relying_party.redirect_uris** a list of SP's redirect_uri's
 - **metadata.openid_relying_party.application_type** use value `web` here.
 - **metadata.openid_relying_party.id_token_signed_response_alg** use value `RS256` here
@@ -483,7 +485,7 @@ Mandatory fields of the Entity Statement payload:
 - **metadata.openid_relying_party.token_endpoint_auth_signing_alg** use value `RS256` here
 - **metadata.openid_relying_party.client_registration_types** use empty `[]` here
 - **metadata.openid_relying_party.organization_name** is the name of the SP's organisation
-- **metadata.openid_relying_party.signed_jwks_uri** is the uri of the SP's signed jwks endpoint
+- **metadata.openid_relying_party.signed_jwks_uri** is the uri of the SP's signed JWKS endpoint
 
 <span style="color:red">Note that it is possible for the SP to use wildcards in each of the redirect_uri's. This is helpful if there are a large number of those Urls. </span> As an example an SP has the following redirect_uri's:
 
@@ -496,28 +498,30 @@ Instead of listing all those four redirect_uri's, you could just list one:
 
 - https://paras-saippuakauppias.com/service*
 
-ISB is then approving all the redirect_uri's matching the text before the wildcard * when validating the parameter in the /oauth/authorize request.
+ISB approves all the redirect_uri's matching the text before the wildcard * when validating the parameter in the /oauth/authorize request.
+
+<span style="color:red">Note! Without proper whitelisting of a redirect_uri used by the SP application, the identification flow will fail.</span>
 
 [For more information see the chapter 3.1 of the OpenID Connect Federation - document](https://openid.net/specs/openid-connect-federation-1_0.html#OpenID.Registration).
 
-OP provides an easy-to-use online validator tool for the SP's Entity Statement JWS. The validity of the JWKS JWS can be checked as well and it is highly recommened to check them both. Validator checks that all the needed fields exists with meaningful values and it checks the signature in both the Entity Statement JWS and the JWKS JWS. Link to the validator: https://isb-test.op.fi/entity-statement-tester .
+OP provides an easy-to-use online validator tool for the SP's Entity Statement JWS. The validity of the JWKS JWS can be checked as well and it is highly recommened to check them both. Validator checks that all the needed fields exists with meaningful values and it checks the signature in both the Entity Statement JWS and the signed JWKS JWS. Link to the validator: https://isb-test.op.fi/entity-statement-tester .
 
-## 14. JWKS
+## 14. Signed JWKS
 
-<span style="color:red">Note that the non-signed ISB JWKS endpoints will be deprecated at the latest on May 2023. Signed JWKS endpoints are already available.</span>
+<span style="color:red">Note that the non-signed JWKS endpoints are deprecated.</span>
 
-The JWKS endpoints are used to exchange public keys between parties. Both SP and ISB have a JWKS endpoint to publish their own public keys. The JWKS has to be signed by the JWKS signing key. The SP's JWKS endpoint URL has to be registered with OP in the production environment.
+The signed JWKS endpoints are used to exchange public keys between parties. Both SP and ISB have a signed JWKS endpoint to publish their own public keys. The signed JWKS JWS has to be signed with the Entity key. The SP's signed JWKS endpoint URL has to be registered with OP in the production environment.
 
-In the Sandbox there is no need to implement JWKS endpoint in the SP end as the ISB uses provided keys, but SP must fetch the ISB signing key from the ISB's signed JWKS endpoint. SP needs to verify that the signature of the JWS matches the ISB JWKS signing key.
+In the Sandbox environment there is no need to implement a signed JWKS endpoint in the SP end as the ISB uses only the provided keys and is not sending any requests to SP's signed JWKS endpoint, but SP must fetch the ISB signing key from the ISB's signed JWKS endpoint. SP needs to verify that the signature of the signed JWKS JWS matches the ISB JWKS Entity key.
 
-SP needs to publish two types of public keys in its JWKS endpoint:
+SP needs to publish two types of public keys in its signed JWKS endpoint:
 - key for verifying both the signed /oauth/authorize request JWS token and the signed JWS token in client_assertion field in the /oauth/token request.
 - key for identity token encrypting
 
-ISB publishes one type of public key in it's JWKS endpoint:
+ISB publishes one type of public key in it's signed JWKS endpoint:
 - key for verifying the signed identity token
 
-The ISB's JWKS endpoint is publicly available. Note that around the time of key rotation there are multiple sig-keys (both old and new) published at the same time. Content-Type of the HTTP response is `application/jwk-set+jwt`.
+The ISB's signed JWKS endpoint is publicly available. Note that around the time of key rotation there are multiple sig-keys (both old and new) published at the same time. Content-Type of the HTTP response is `application/jwk-set+jwt`.
 
 For example in Sandbox: `GET https://isb-test.op.fi/jwks/broker-signed`.
 
@@ -527,7 +531,7 @@ Example response (Signed JSON web token):
 eyJ0eXAiOiAiSldTIiwgImFsZyI6ICJSUzI1NiIsICJraWQiOiAiaGsybDFaUmU0N2tWWDVta0lfeUJoNlR1ZWwtNXlJYk40ZDFVT2d6VTZtRSJ9.eyJrZXlzIjogW3siZSI6ICJBUUFCIiwgImt0eSI6ICJSU0EiLCAibiI6ICJ0a1RQUUQ1MUlaYWx1WDdUMzNWSkZfdF9xQmlKQ1JoRUJGbUw1OU9ZRjdXWWlOdndJaTFRUkxQSFdMUXFWQ1VFdnIzWVZZa1dTUXpEOXJ4M2xRZHNSTVlRdmdkVGs0NXZHTFVJeWplazFTcUVDYjljYnZnRlJydV9uTEF0WldUb2dXZ3BuSE41TV9ya0kwYWVUVmtXV1ZGZ0VValJ0TnZmNURBSnoyVFdmWEVlY0Q5dHluU0hna1RIU29SV3pqQkZNQW1LNjdxWEJtMV83T2VibmNGcFR1UENHUjRWRmQ1VGNQamJaX1AtUWRGMmttS29tbkM0NllXWFVOd2hvdjhIa2R3VkJvckNVWjFuM09fcE5TRWMtdHI1dmZXWUZSSzdfY3FUMDlRWndiVS15SXo0eFVFQjM4dlRHWXhYRGVYRWtnZGJaS3pVZ01vTnFDRmY1b1lxSFEiLCAidXNlIjogInNpZyIsICJraWQiOiAiLVZUZVJERHFLRWF1dnhqaUJCTnNXcXFVbnlBUUFYb19lQTJSZ3BKVXBncyJ9LCB7ImUiOiAiQVFBQiIsICJrdHkiOiAiUlNBIiwgIm4iOiAiMGRET2ZvQmREVWRSQmdXUkJzTDRRSzZUallQR0RiRVN4RFZmQ1ljd1Z0TVJOS1ZkM1RUdFM1UWRJR1IybENUUk0zTllPc0VwY3ZoNXpHaVZrY3UyekZ4ZnlZdzFCVVhCbjczZUhibnNhTFNnZjB2cEZvdGxqWWhsYVF2TXo3Tlh1X01yS0cxdXhRczVTN3R4RE9idjRONElkTzU5TXBZVUNvM0NIVGVhZW5GN2trUkJXYXFvWXpCZnhCQzBrNUM4blVjLWMydjNKTUZkTlVwLXg5UjJhSmxVNkUxOUtmdXJmQjRlUUlqT3VLV3BuQ0xPenZ6bTEwTTdaWVo0aUZXalJfQWpqVGppSGRlOEhKZTNIT1ZsVG1MSmdkUkQ1d3VmcWFzSWNXdmg1eDcwMnZmNVFtZnRvWXpXeFp4eGZVdEo1S3RjeVdpRzNFa2ZLQWpldmdxSkR3IiwgInVzZSI6ICJzaWciLCAia2lkIjogIllyZFFoX1RrQVR0bmlHVjRsTVAyZ01WVTR3MDl1ZWpPaFB1Z0hXVlR4eTQifSwgeyJlIjogIkFRQUIiLCAia3R5IjogIlJTQSIsICJuIjogInVsQS1YR1NVNEZ0V09xVWNfUkoyNlVtLVI1OFotRUEyUGVTRFB1cXA0WG9pQ0JnOGZkTjFvWmhia1R4MHI4RFpGVEZHc1pkZzk3TU9fLUhyNHJrRkgxdHlpUXZyTC1jUGxKWkp3enNnbWQtZlQ1RTlub0hDclVRNno5VFdWUDAzMzB1SmVUVzVLeUw5ZVp5aHFqRlRWYUJLTlU1OXd5U0tiWERFTVBzZ3NBWEhVTC1weUhkaFpLdk5zQzBPZjVwQm1lX2hhelNJTGpmNDlyQlZfN1NZaWZUb1V1U05sSHgxQm91OTZWLTNobGw2UEQzSmVGeWlfVkhSWVU4MkRwekN2RVc1WF80UkJRRDhfbEFjNUpCNUl1WWVTYmFUQzYzdFVwQldsZGdSUGhFWkxaaWtUN0NNYW9sMkVhQ2VEdld4ZC0yTDNmdEFfNGxLZkNpdnowVnBRdyIsICJ1c2UiOiAic2lnIiwgImtpZCI6ICIwY1h2M3NyalphU3J3VFdRVlFBRnlTRmFHOWFyUHEwQ2g4S3VIZVNDaUJzIn1dLCAiaXNzIjogImh0dHBzOi8vaXNiLXRlc3Qub3AuZmkiLCAic3ViIjogImh0dHBzOi8vaXNiLXRlc3Qub3AuZmkiLCAiaWF0IjogMTY2NDIzNzg1NSwgImV4cCI6IDE2NjQyNDE0NTV9.FhMtdh1WQi7o0Xw1bCby6yM4oYVKCL32ZwspeTMf85GXbBVRZHMRo9FtOJc5uNcU4sqxty_5wUETZVa5g3kWiL00dkI4Qn0fZTtdWZa073IT3rkRKwQqZ5gZRtzeY47yUpZ3VCnLXKnOe3FHBBeGZp9pXf97UrpwUQTXHYQWxyLd1YNTFSFravOGVisOMzbmMct9Te91H5-w0-eNUUAHSEGF2C7_HDK4MCWNDki7g39WZYcX3f8RkU9GAC6ItMatBgazLxW_VQaZDRU6QKAyi2_T5dKY9zOh33hzRPG1JPo20mMej5UB5mNvxw5vPImz7BN3cfd9NPV2gH9RFNtrEV69uA8-aPlk6NOX7TSTbiZ3C9HdXC1SCSw-2acZbs13j99XqNONfIdMqrQly_OK9lk8ZMaFd7TiVvDRysfa5aM8Q52UqIWcHBZkzb-sEQvd1_YNn6pfFRFZuRS_C5nRVuFpz2VT1iKn8Qpgt7gpmygv8TYGiAS5QPieduCHN1dqM39UYavrFPHZjjj72ibU_4ymiEcnSXh5XaePNkJLiVfLZiwODVvQ_kPaNQh_nsZybDjfn62YryOiRzrQuiXS6q6A7Dr2o372DI02C-sqycN-MRk6OmjW3Km4c9jTUEeQJFr5Mp-EgEgME37RJ9e4LJxmxps9nrNvenUYYgGUMdk
 ```
 
-example response decoded:
+example response decoded payload:
 
 ```json
 {
@@ -554,7 +558,7 @@ example response decoded:
 }
 ```
 
-as an example with the provided keys the SP's JWKS endpoint's response looks like this (Signed JSON web token):
+as an example with the provided keys the SP's signed JWKS endpoint's response looks like this (Signed JSON web token):
 ```
 eyJhbGciOiJSUzI1NiIsImtpZCI6IlFVR0h6UzA1ODMxbFlzT0I3X28tTnoyT2RlMmptbm1oNWRKakRBNVE1U00ifQ.eyJrZXlzIjpbeyJrdHkiOiJSU0EiLCJraWQiOiJkbC1sZ1JjVDdMaEVrcWJub2Q2UUdCSGw4dmVxZ1plbndkQjNSVjJPSmtZIiwidXNlIjoic2lnIiwibiI6InltZUdIR3BmUlVkUWUwVm1QZWkzQVJGQmpscFZySzA2UnBVRjNQSkFUR2tOd0JvWDRqNkxJSnVhY1RubUxPaVRsajg0cXk4Z2dMbW9LWnFhaTZKVnNHUVYtVGhsQ2NSb3VqSENrTnE4ZWViTEJ1MGNyYU5kNjJtLWZYRGZxclo1VEc3ZlRnNkRhNE1pdjFyQzJfaEY1Q3MzSXVrQUp3SG5iTlNPWTBMcTkzamdWNGZBdDVCYnBUdHRXS1Vfd0JMLVBrZWkzWWQxcFBvUzlNbXpMa19KOFpkb1g3MkhfTnpyWGdPMUFmb0lGcHRkRk1yVjEzak1adTVZME5iZ2dxUGxlMUVRYV9FcmRMaHFJT01mcGxsc2x4TFBrWl94cTMtM3B0b2dJRlZPcG5KN0NTTHVyLUYteFVkbDk0LTBrUHUzamtHWkZJQ1JiOWJrZzFBMUJIS2lRdyIsImUiOiJBUUFCIn0seyJrdHkiOiJSU0EiLCJraWQiOiJNZllHdU9OV1FaYWJ3d3BoMDJ6SkVxT1FJUE9WMVBoRXNjZ0hjaDBRcUQwIiwidXNlIjoiZW5jIiwibiI6InhSWFdIWVJ2c0ZKNldHU2lMU0RaNUtnUkhnbFNwVEZiWnNyWl9QNlNhOVpLZVN0T2hjUDBNNEZPOU9SZGMxMk1zVFBsRk1JUXktNlRpSlh2WjhweHdjd2VGemFlR1ZCV3RJXzcyd2FBSHU1U1NGbkRwSjlTVlJZQ2RDVTk1T05aQXpOTWFOTkhUUGl2ZzVLZ1lMNDB5WFpxR1NDSUFwQUVwN1JjRTZobTZQWWRYTGVXZl9BVEtOZlZoOVdNcE1nNDlCNUhXSTdKUFZqTjh4Vmk3M3dqTUtnS2NSZXVYOFQxN0h1Rjd3UzBMWndXcjgwUjhzWENldk1LZFVoYWg2WWNGNjU0ZURzcVlDRVZyVkFWT3BkU01zbXdrdW9OMG1uRG11OGx0eUNpLV80NmliZm1nRFdGdl9GSXgtcUF4OTJBRHRCRll5aEFpV0VpYTRhNjdKN2g2USIsImUiOiJBUUFCIn1dLCJpc3MiOiJodHRwczovL3BhcmFzLXNhaXBwdWFrYXVwcGlhcy5jb20iLCJzdWIiOiJodHRwczovL3BhcmFzLXNhaXBwdWFrYXVwcGlhcy5jb20iLCJpYXQiOjE2NzUwOTYyNTYsImV4cCI6MTY3NTE4NjI1Nn0.r3QTg7PskKH8dmZjOwPswqzh4Ae_Ee1Mm_s6YgKmNu48aLIYjhWZXJ6EGKKEX9aD2fT5jh29QTQ7ftnXijcg8UM53lC4aIVWZwNcrlYSATCUVI5HVlOgcPfjB8Pvj1AgK-9fhuQoSoWcEck1-KuGbYTUMAdU_wt26lEyf8ahXEJMantc5LZMq_xu9PLAOU4WiFt1wf1P3H4389fnzrN9uLrTHfQMbjxP56NiDbdYIC1cp4fFOf3v-_olA8ezQHypN-fbdy9VD1HJSPkNyca5-67QVntZjGI5ohJIv2j5My7nbOygn5xHuzoD2TQSDTgceXdDtFPL36X3Eq2rxt3MCw
 ```
@@ -607,7 +611,7 @@ Content-Type of the HTTP response should be `application/jwk-set+jwt`.
 
 [For more information See the chapter 4.1 of the OpenID Connect Federation - document](https://openid.net/specs/openid-connect-federation-1_0.html#OpenID.Registration).
 
-Note that the kid's listed in the JWKS endpoint must match to the kid's you specify in the JWS tokens. When using the sandbox environment, be careful to use the kid's mentioned in the above example and not one's you generate yourself and make sure to use the given JWKS signing key. Because the sandbox environment uses predefined keys the ISB does not call your JWKS endpoint. If you wish to test your JWKS endpoint, you can do it by comparing your output against the example output above.
+Note that the kid's listed in the JWKS endpoint must match to the kid's you specify in the JWS tokens. When using the sandbox environment, be careful to use the kid's mentioned in the above example and not one's you generate yourself and make sure to use the given Entity key. Because the sandbox environment uses predefined keys the ISB does not call your signed JWKS endpoint. If you wish to test your signed JWKS endpoint, you can do it by comparing your output against the example output above.
 
 About ISB key rotation.
 
@@ -616,13 +620,33 @@ ISB rotates the signing key once a week in production. To help testing, the sign
 ![Key rotation](./key_rotation.png?raw=true)
 
 - CREATE, new key is created
-- WARM-UP, key is published in the JWKS but not in use
+- WARM-UP, key is published in the signed JWKS but not in use
 - NORMAL USE, key is in use
-- COOLDOWN, key is still published in the JWKS and is not in use
-- TAIL, key is not published anymore in the JWKS, key is not in use
+- COOLDOWN, key is still published in the signed JWKS and is not in use
+- TAIL, key is not published anymore in the signed JWKS, key is not in use
 - DELETION, key is deleted
 
-Caching the keys fetched from the JWKS endpoint is a good idea, but make sure that the refresh mechanism supports the ISB lifecycle, and there is a forced cache refresh in case key is not found.
+Caching the keys fetched from the signed JWKS endpoint is a good idea, but make sure that the refresh mechanism supports the ISB lifecycle, and there is a forced cache refresh in case a key is not found in the cache.
+
+About SP key rotation.
+
+SP should rotate its OIDC signing and encryption keys regularly. The rotation of the signing key should follow same principle as described above for the ISB.
+
+The SP's encyption key rotation should follow this principle
+
+![encyption key rotation](./encryption_key_rotation.png?raw=true)
+
+- CREATE, new key is created
+- WARM-UP, key is not published but it is deployed side-by-side with the old key so that it can be used for decrypting immediately after it is published
+- NORMAL USE, key is in use
+- TAIL, key is still available for decrypting in case some more tokens encrypted for it arrive, but it is no longer published
+- DELETION, key is deleted
+
+blue colour indicates key being published in the SP's signed JWKS endpoint.
+
+The picture below illustrates the role of keys
+![role of keys](./role_of_keys.png?raw=true)
+
 
 ## 15. Public Sandbox for customer testing
 
@@ -631,7 +655,8 @@ The public Sandbox differs from the production in these major ways.
 - The Sandbox environment provides test data instead of real personal information.
 - To use the Sandbox environment you need to use the separate API endpoints described above.
 - Common shared credentials and client id are used for the Sandbox environment. Because the sandbox does not require registration all developers need to use the provided keys (instead of their own keys). Production client id does not work in Sandbox.
-- SP do not need to implement JWKS-endpoint in Sandbox as the ISB uses provided keys.
+- SP do not need to implement signed JWKS endpoint in Sandbox as the ISB uses provided keys.
+- There is no need for SP to create an Entity Statement.
 - redirect_uri does not have to agreed with OP in Sandbox.
 - ftn_spname is whitelisted in the Sandbox with the following three values. Only these are approved and pre-registered with the OP ISB:
   - "Saippuaa kansalle"
@@ -644,8 +669,8 @@ These id's and keys are used for the Sandbox environment:
 - **Client identifier**: saippuakauppias
 - **Token encryption / decryption key**: See `sandbox-sp-encryption-key.pem`
 - **Signing key**: See `sandbox-sp-signing-key.pem`
-- **SP JWKS signing key**: See `sandbox-sp-entity-signing-key.pem`
-- **public ISB JWKS signing key**: See `sandbox-isb-entity-signing-pubkey.pem`
+- **SP JWKS signing key (Entity key)**: See `sandbox-sp-entity-signing-key.pem`
+- **public ISB JWKS signing key (Entity key)**: See `sandbox-isb-entity-signing-pubkey.pem`
 
 ## 16. Service Provider code examples
 
@@ -702,10 +727,10 @@ The regulation M72b for the strong electronic identification services by Trafico
 
 These are the changes from Service Provider point of view:
 - introduction of ftn_spname
-- Service Provider needs to create a new key for signing it's JWKS keys
-- Service Provider needs to replace its current JWKS endpoint with a signed JWKS endpoint
-- Service Provider needs to create an Entity Statement containing the public signing key and exchange it with OP.
-- ISB is also replacing its JWKS endpoint with a signed one. Service Provider needs to start using the ISB's signed JWKS endpoint and to verify the signature of the ISB OP JWKS.
+- Service Provider needs to create a new key for signing it's JWKS keys (Entity key)
+- Service Provider needs to replace its current non-signed JWKS endpoint with a signed JWKS endpoint
+- Service Provider needs to create an Entity Statement containing the public Entity key and other relevant information and exchange it with OP.
+- ISB is also replacing its non-signed JWKS endpoint with a signed one. Service Provider needs to start using the ISB's signed JWKS endpoint and to verify the signature of the ISB OP JWKS.
 
 ## Introduction of ftn_spname
 
@@ -719,15 +744,15 @@ The new optional **ftn_spname** parameter in the /oauth/authorize request makes 
 
 ## Service Provider needs to create a new key for signing it's JWKS keys
 
-Service Provider needs to create a new RSA key for signing its JWKS and the Entity Statement. This key is typically a long-lived key. The private part of this key shall be kept as secret and stored securely.
+Service Provider needs to create a new RSA key (Entity key) for signing its JWKS and the Entity Statement. This key is typically a long-lived key. The private part of this key shall be kept as secret and stored securely.
 
 ## Service Providers signed JWKS
 
-So far both the OP ISB and the SP have published its public keys in the JWKS endpoint. This continues as such in the future, but the payload will be a signed JSON web token instead of json. See the modified chapter 14.
+Previously both the OP ISB and the SP have published its public keys in the non-signed JWKS endpoint. The publishing of the key continues as such in the future, but the payload will be a signed JSON web token instead of json. I.e. non-signed JWKS endpoint needs to be replaced by signed JWKS endpoint. See the modified chapter 14.
 
 ## Service Provider Entity Statement
 
-Service Provider needs to create an Entity Statement and exchange it with the OP. Easiest way is to implement the Entity Statement creation programmatically like in the integration examples. This will also minimize human errors e.g. when rotating the signing key. Entity Statement is described in the chapter 13.
+Service Provider needs to create an Entity Statement and exchange it with the OP. Easiest way is to implement the Entity Statement creation programmatically like in the integration examples. This will also minimize human errors e.g. when rotating the signing key or when updating the whitelisting of the redirect_uris. Entity Statement is described in the chapter 13.
 
 It is possible to check the validity of the Service Provider's Entity Statement as well as signed JWKS online. See chapter 13 for more details.
 
