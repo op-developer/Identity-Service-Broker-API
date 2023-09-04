@@ -1,6 +1,6 @@
 # Service Provider API for OP Identity Service Broker
 
-2023-06-16
+2023-09-01
 
 OP Identification Service Broker allows Service Providers to implement strong electronic identification (Finnish bank credentials, Mobile ID) easily to websites and mobile apps via single API.
 
@@ -21,7 +21,7 @@ Table of contents:
 8. POST /oauth/token
 9. Identity token
 10. GET /oauth/profile
-11. GET /.well-known/openid-configuration
+11. GET /.well-known/openid-configuration (DEPRECATED)
 12. GET /.well-known/openid-federation
 13. The Entity Statement of Service Provider
 14. Signed JWKS
@@ -312,7 +312,7 @@ The information received depends on the scope of identification request and on w
 
 In addition there are these standard attributes:
 
-- **iss**: Issuer. This should be the same as `issuer` key in .well-known/openid-configuration metadata. __See section 11__. SP can compare this value to the key value from metadata.
+- **iss**: Issuer. This should be the same as `issuer` key in .well-known/openid-federation metadata. __See section 11__. SP can compare this value to the key value from metadata.
 - **sub**: Subject identifier, not persistent, feel free to ignore
 - **aud**: Audience this ID Token is intended for. It MUST contain the SP `client_id`
 - **exp**: Expiration time in seconds since UNIX epoch on or after which the ID Token MUST NOT be accepted for processing.
@@ -388,13 +388,13 @@ Example of returned data:
 }
 ```
 
-## 11. GET /.well-known/openid-configuration
+## 11. GET /.well-known/openid-configuration (DEPRECATED)
 
-We provide an optional OpenID Discovery metadata endpoint. It may be used to configure OAuth2 client implementations should they require it. The endpoint for production use is `https://isb.op.fi/.well-known/openid-configuration`. For testing please use the sandbox endpoint `https://isb-test.op.fi/.well-known/openid-configuration`.
+Before the M72b regulation change and migration from unsigned to signed JWKS we provided an optional OpenID Discovery metadata endpoint. It was used to configure OAuth2 client implementations should they require it. The endpoint for production use was `https://isb.op.fi/.well-known/openid-configuration`. The OpenID Discovery specification conflicts with the use of signed JWKS endpoints and therefore the use of this endpoint is deprecated and will be removed in the near future. If you have an implementation that calls this endpoint, you should switch over to the OpenID federation metadata endpoint describe in the next chapter.
 
 ## 12. GET /.well-known/openid-federation
 
-We provide an optional OpenId federation metadata endpoint containing the Entity Statement of the ISB. The metadata provided by this endpoint should not be automatically relied on by the SP, but should be manually reviewed. I.e. programmatical requests for this endpoint are not allowed and are monitored. OP can also deliver the Entity Statement via email if required.
+We provide an optional OpenId federation metadata endpoint containing the Entity Statement of the ISB. The metadata provided by this endpoint SHOULD NOT be automatically relied on by the SP, but should be manually reviewed. I.e. programmatical requests for this endpoint are not allowed and are monitored. OP can also deliver the Entity Statement via email if required.
 
 The endpoint for production use is `https://isb.op.fi/.well-known/openid-federation`. For testing please use the sandbox endpoint `https://isb-test.op.fi/.well-known/openid-federation`.
 
@@ -748,7 +748,7 @@ Service Provider needs to create a new RSA key (Entity key) for signing its JWKS
 
 ## Service Providers signed JWKS
 
-Previously both the OP ISB and the SP have published its public keys in the non-signed JWKS endpoint. The publishing of the key continues as such in the future, but the payload will be a signed JSON web token instead of json. I.e. non-signed JWKS endpoint needs to be replaced by signed JWKS endpoint. See the modified chapter 14.
+Previously both the OP ISB and the SP have published its public keys in the non-signed JWKS endpoint. The publishing of the key continues as such in the future, but the payload will be a signed JSON web token instead of json. I.e. non-signed JWKS endpoint needs to be replaced by signed JWKS endpoint. See the modified chapter 14. Similar to the unsigned JWKS endpoints, the OpenID Discovery endpoint has been deprecated and will be removed in favor of the currently provided OpenID federation metadata.
 
 ## Service Provider Entity Statement
 
