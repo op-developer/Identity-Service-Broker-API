@@ -1,6 +1,6 @@
 # Service Provider API for OP Identity Service Broker
 
-2023-09-01
+2024-02-14
 
 OP Identification Service Broker allows Service Providers to implement strong electronic identification (Finnish bank credentials, Mobile ID) easily to websites and mobile apps via single API.
 
@@ -390,15 +390,15 @@ Example of returned data:
 
 ## 11. GET /.well-known/openid-configuration (DEPRECATED)
 
-Before the M72b regulation change and migration from unsigned to signed JWKS we provided an optional OpenID Discovery metadata endpoint. It was used to configure OAuth2 client implementations should they require it. The endpoint for production use was `https://isb.op.fi/.well-known/openid-configuration`. The OpenID Discovery specification conflicts with the use of signed JWKS endpoints and therefore the use of this endpoint is deprecated and will be removed in the near future. If you have an implementation that calls this endpoint, you should switch over to the OpenID federation metadata endpoint describe in the next chapter.
+The deprecated OpenID Discovery metadata endpoint has been removed. Use the OpenID federation metadata instead.
 
 ## 12. GET /.well-known/openid-federation
 
-We provide an optional OpenId federation metadata endpoint containing the Entity Statement of the ISB. The metadata provided by this endpoint SHOULD NOT be automatically relied on by the SP, but should be manually reviewed. I.e. programmatical requests for this endpoint are not allowed and are monitored. OP can also deliver the Entity Statement via email if required.
+We provide an optional OpenID federation metadata endpoint containing the Entity Statement of the ISB. The metadata provided by this endpoint SHOULD NOT be automatically relied on by the SP, but should be manually reviewed. I.e. programmatical requests for this endpoint are not allowed and are monitored. OP can also deliver the Entity Statement via email if required.
 
 The endpoint for production use is `https://isb.op.fi/.well-known/openid-federation`. For testing please use the sandbox endpoint `https://isb-test.op.fi/.well-known/openid-federation`.
 
-The payload is a base64 encoded and signed JSON web token and contains e.g. the URI of the signed JWKS endpoint. The key used for signing is the ISB's Entity key. Note that there can be multiple Entity Keys so when veritying the signing of the Entity Statement or the signed JWKS JWS the correct key has to be used. Instead of calling the ISB's OpenId federation metadata endpoint programmatically the SP should store this Entity key or keys and use those when validating the OIDC keys from ISB's signed JWKS endpoint. Content-Type of the HTTP response is `application/entity-statement+jwt`.
+The payload is a base64 encoded and signed JSON web token and contains e.g. the URI of the signed JWKS endpoint. The key used for signing is the ISB's Entity key. Note that there can be multiple Entity Keys so when veritying the signing of the Entity Statement or the signed JWKS JWS the correct key has to be used. Instead of calling the ISB's OpenID federation metadata endpoint programmatically the SP should store this Entity key or keys and use those when validating the OIDC keys from ISB's signed JWKS endpoint. Content-Type of the HTTP response is `application/entity-statement+jwt`.
 
 Recommended way is to store the Entity Statement JWS as such into the Service Provider's application and when needed the JWS is parsed by the SP application to get the ISB's Entity key(s) and ISB's different uri's.
 
