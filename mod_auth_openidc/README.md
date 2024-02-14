@@ -6,7 +6,7 @@ Make sure you have Docker installed. Then to build and run the container, type f
 
 ```
 docker build -t apachedemo .
-docker run -p 8001:8001 -it apachedemo:latest
+docker run --platform linux/amd64 -p 8001:8001 -it apachedemo:latest
 ```
 
 Then enter http://localhost:8001/ with your browser.
