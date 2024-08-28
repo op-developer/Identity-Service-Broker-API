@@ -1,6 +1,6 @@
 # Service Provider API for OP Identity Service Broker
 
-2024-02-14
+2024-08-27
 
 OP Identification Service Broker allows Service Providers to implement strong electronic identification (Finnish bank credentials, Mobile ID) easily to websites and mobile apps via single API.
 
@@ -676,10 +676,10 @@ These id's and keys are used for the Sandbox environment:
 
 OP Provides the following Service Provider demo applications:
 
-- PHP-based: https://github.com/op-developer/Identity-Service-Broker-integration-example
 - Java-based: https://github.com/op-developer/Identity-Service-Broker-integration-java-example
 - Python-based: https://github.com/op-developer/Identity-Service-Broker-integration-python-example
 - Typescript-based: https://github.com/op-developer/Identity-Service-Broker-integration-typescript-example
+- PHP-based: https://github.com/op-developer/Identity-Service-Broker-integration-example (deprecated)
 
 ## 17. Libraries for Service Provider
 
@@ -695,7 +695,6 @@ Broadly speaking we do not currently advise use of generic OpenID Connect librar
 
 oauth2-client makes it simple to integrate your Service Provider application with OP ISB OpenID Connect flow. See https://github.com/thephpleague/oauth2-client .
 
-Jose-php can be used to decrypt and verify the identity token. See https://github.com/nov/jose-php .
 
 ## 20. Java
 
