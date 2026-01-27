@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: Copyright 2026 OP Pohjola (https://op.fi). All Rights Reserved.
+#
+# SPDX-License-Identifier: LicenseRef-OpPohjolaAllRightsReserved
+
 FROM --platform=linux/amd64 debian:bookworm
 EXPOSE 8001
 

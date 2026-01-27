@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: Copyright 2026 OP Pohjola (https://op.fi). All Rights Reserved.
+#
+# SPDX-License-Identifier: LicenseRef-OpPohjolaAllRightsReserved
+
 .PHONY: pdf
 
 pdf:

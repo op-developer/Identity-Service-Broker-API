@@ -1,3 +1,9 @@
+<!--
+SPDX-FileCopyrightText: Copyright 2026 OP Pohjola (https://op.fi). All Rights Reserved.
+
+SPDX-License-Identifier: LicenseRef-OpPohjolaAllRightsReserved
+-->
+
 # Service Provider API for OP Identity Service Broker
 
 2024-08-27
