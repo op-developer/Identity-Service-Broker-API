@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# SPDX-FileCopyrightText: Copyright 2026 OP Pohjola (https://op.fi). All Rights Reserved.
+#
+# SPDX-License-Identifier: LicenseRef-OpPohjolaAllRightsReserved
+
 echo "Content-Type: text/html"
 echo
 

@@ -1,3 +1,9 @@
+<!--
+SPDX-FileCopyrightText: Copyright 2026 OP Pohjola (https://op.fi). All Rights Reserved.
+
+SPDX-License-Identifier: LicenseRef-OpPohjolaAllRightsReserved
+-->
+
 # Authentication demo with Apache mod_auth_openidc
 
 This directory contains an example Docker container that uses Apache mod_auth_openidc module to authenticate the user using OP Identity Service Broker's sandbox environment.

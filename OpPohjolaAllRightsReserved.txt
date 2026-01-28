@@ -1,0 +1,3 @@
+LicenseRef-OpPohjolaAllRightsReserved
+Copyright OP Pohjola (https://op.fi)
+All Rights Reserved.
