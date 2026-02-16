@@ -6,7 +6,7 @@ SPDX-License-Identifier: LicenseRef-OpPohjolaAllRightsReserved
 
 # Service Provider API for OP Identity Service Broker
 
-2024-08-27
+2026-02-16
 
 OP Identification Service Broker allows Service Providers to implement strong electronic identification (Finnish bank credentials, Mobile ID) easily to websites and mobile apps via single API.
 
