@@ -6,7 +6,7 @@ SPDX-License-Identifier: LicenseRef-OpPohjolaAllRightsReserved
 
 # Service Provider API for OP Identity Service Broker
 
-2024-08-27
+2026-02-16
 
 OP Identification Service Broker allows Service Providers to implement strong electronic identification (Finnish bank credentials, Mobile ID) easily to websites and mobile apps via single API.
 
@@ -621,7 +621,7 @@ Note that the kid's listed in the JWKS endpoint must match to the kid's you spec
 
 About ISB key rotation.
 
-ISB rotates the signing key once a week in production. To help testing, the signing key is rotated daily in the Sandbox environment. The figure below illustrates the lifecycle of the keys.
+ISB rotates the signing key once a week in production. To help testing, the signing key is rotated more frequently in the Sandbox environment than in the production environment. The figure below illustrates the lifecycle of the keys.
 
 ![Key rotation](./key_rotation.png?raw=true)
 
