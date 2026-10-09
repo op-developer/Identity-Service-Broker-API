@@ -6,7 +6,7 @@ SPDX-License-Identifier: LicenseRef-OpPohjolaAllRightsReserved
 
 # Service Provider API for OP Identity Service Broker
 
-2026-02-16
+2026-10-09
 
 OP Identification Service Broker allows Service Providers to implement strong electronic identification (Finnish bank credentials, Mobile ID) easily to websites and mobile apps via single API.
 
@@ -693,7 +693,7 @@ See the examples directory for examples on how to implement a service provider b
 
 ## 18. Javascript
 
-Node-jose can be used to decrypt and verify the identity token. See https://github.com/cisco/node-jose .
+jose can be used to decrypt and verify the identity token. See https://github.com/panva/jose .
 
 Broadly speaking we do not currently advise use of generic OpenID Connect libraries. They often lack support for signed authorization requests and encrypted ID tokens, requiring you to extend them for use with our API. In such situations it is typically easier to implement your service provider with libraries offering slightly lower level of abstraction, as demonstrated by our code examples.
 
